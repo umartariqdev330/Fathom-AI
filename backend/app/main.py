@@ -4,9 +4,29 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import action_items, calendar, clips, highlights, meetings, recordings, search
-from app.database import Base, engine
+from app.database import Base, SessionLocal, engine
+from app.models import Meeting
 
 Base.metadata.create_all(bind=engine)
+
+
+def seed_if_empty() -> None:
+    """Seed on first boot.
+
+    Deployment targets that give the app a fresh disk would otherwise serve an
+    empty workspace, and an empty meetings list shows nothing about the product.
+    """
+    db = SessionLocal()
+    try:
+        if db.query(Meeting).count() == 0:
+            from seed import main as run_seed
+
+            run_seed()
+    finally:
+        db.close()
+
+
+seed_if_empty()
 
 app = FastAPI(title="Meetly AI", version="1.0.0")
 

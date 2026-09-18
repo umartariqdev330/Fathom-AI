@@ -15,3 +15,5 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+.claude/capture-trace.log
+.claude/capture-errors.log

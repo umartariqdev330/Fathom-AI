@@ -217,6 +217,15 @@ function main() {
 
 try {
   main();
-} catch {
-  // A capture failure must never break the session.
+} catch (error) {
+  // A capture failure must never break the session, but it must never be
+  // silent either: a log that quietly stops recording is worse than no log.
+  try {
+    fs.appendFileSync(
+      path.join(process.cwd(), '.claude', 'capture-errors.log'),
+      `${new Date().toISOString()} [${MODE}] ${error?.stack ?? error}\n`,
+    )
+  } catch {
+    /* nothing left to do */
+  }
 }

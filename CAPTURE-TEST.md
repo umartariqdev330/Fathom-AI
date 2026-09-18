@@ -127,3 +127,18 @@ apply to every session opened in this repo, not only the one that created them.
   no trailing text: it would reach back and re-log the *previous* turn's answer. It
   now walks backwards and stops at the most recent real user prompt, so a turn with
   no final text logs nothing rather than something false.
+
+- Late in the build I checked the log, saw one `PROMPT` and zero `RESPONSE`
+  entries, and concluded the `Stop` hook was broken. It was not. The whole build
+  ran as a single uninterrupted assistant turn, so `Stop` had not fired once. I
+  had misread "no response logged yet" as "responses are not being logged".
+- While chasing that non-bug I ran the response hook by hand against the live
+  transcript. It worked, and wrote a `RESPONSE` entry — but that entry was a
+  mid-turn snapshot, not an answer to the prompt it was numbered against, and its
+  presence would have made the real `Stop` hook skip the genuine response when the
+  turn ended. I removed it. Deleting it is consistent with the rule against
+  tidying the log: the rule protects real history, and that entry was an artefact
+  of my own debugging, not a turn that happened.
+- One thing did come out of it. The original `catch {}` swallowed every failure
+  silently, which is how a capture hook stops recording without anyone noticing.
+  Errors now append to `.claude/capture-errors.log`.
