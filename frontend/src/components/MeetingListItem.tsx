@@ -1,0 +1,110 @@
+import { Link } from 'react-router-dom'
+import { ListTodo, Star, Video } from 'lucide-react'
+import type { MeetingCard } from '../types'
+import { durationLabel, meetingTime, relativeDay } from '../lib/format'
+import { AvatarStack, Badge } from './ui'
+
+function Meta({ meeting }: { meeting: MeetingCard }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-ink-faint">
+      <span className="text-ink-soft">{relativeDay(meeting.date)}</span>
+      <span>{meetingTime(meeting.date)}</span>
+      <span>{durationLabel(meeting.duration)}</span>
+      {meeting.platform && <span>{meeting.platform}</span>}
+      {meeting.action_item_count > 0 && (
+        <span className="flex items-center gap-1">
+          <ListTodo size={12} />
+          {meeting.action_item_count}
+        </span>
+      )}
+      {meeting.highlight_count > 0 && (
+        <span className="flex items-center gap-1">
+          <Star size={12} />
+          {meeting.highlight_count}
+        </span>
+      )}
+    </div>
+  )
+}
+
+export function MeetingListItem({ meeting }: { meeting: MeetingCard }) {
+  return (
+    <li>
+      <Link
+        to={`/meetings/${meeting.id}`}
+        className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4 transition hover:border-line-strong hover:bg-raised/40"
+      >
+        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-ink">
+          <Video size={16} />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-medium text-ink">{meeting.title}</h3>
+            <Badge tone={meeting.meeting_type === 'External' ? 'accent' : 'neutral'}>
+              {meeting.meeting_type}
+            </Badge>
+          </div>
+
+          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-ink-soft">
+            {meeting.overview ?? meeting.description}
+          </p>
+
+          <div className="mt-2.5">
+            <Meta meeting={meeting} />
+          </div>
+        </div>
+
+        <div className="hidden shrink-0 sm:block">
+          <AvatarStack names={meeting.participants.map((person) => person.name)} />
+        </div>
+      </Link>
+    </li>
+  )
+}
+
+export function MeetingTile({ meeting }: { meeting: MeetingCard }) {
+  return (
+    <li>
+      <Link
+        to={`/meetings/${meeting.id}`}
+        className="flex h-full flex-col rounded-xl border border-line bg-surface p-4 transition hover:border-line-strong hover:bg-raised/40"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-medium text-ink">{meeting.title}</h3>
+          <Badge tone={meeting.meeting_type === 'External' ? 'accent' : 'neutral'}>
+            {meeting.meeting_type}
+          </Badge>
+        </div>
+
+        <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-ink-soft">
+          {meeting.overview ?? meeting.description}
+        </p>
+
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <Meta meeting={meeting} />
+          <AvatarStack names={meeting.participants.map((person) => person.name)} max={3} size={22} />
+        </div>
+      </Link>
+    </li>
+  )
+}
+
+export function UpcomingRow({ meeting }: { meeting: MeetingCard }) {
+  return (
+    <li className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3.5">
+      <div className="w-20 shrink-0 text-center">
+        <p className="text-xs font-medium text-ink-soft">{relativeDay(meeting.date)}</p>
+        <p className="font-mono text-sm whitespace-nowrap text-ink">{meetingTime(meeting.date)}</p>
+      </div>
+      <div className="min-w-0 flex-1 border-l border-line pl-3">
+        <p className="truncate text-sm font-medium text-ink">{meeting.title}</p>
+        <p className="mt-0.5 text-xs text-ink-faint">
+          {durationLabel(meeting.duration)}
+          {meeting.platform && ` · ${meeting.platform}`}
+        </p>
+      </div>
+      <AvatarStack names={meeting.participants.map((person) => person.name)} max={3} size={22} />
+    </li>
+  )
+}

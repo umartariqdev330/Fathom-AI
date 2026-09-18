@@ -75,7 +75,7 @@ def _local_summary(title: str, segments: list[dict]) -> dict:
 
     return {
         "overview": (
-            f"{title} ran for {_duration(segments)} with {len(speakers)} participants. "
+            f"{title} ran for {_duration(segments)} with {_count(len(speakers), 'participant')}. "
             f"The group covered {', '.join(topics[:3]) or 'several topics'}."
         ),
         "key_points": [s["text"].strip() for s in longest[:4]],
@@ -91,11 +91,15 @@ def _local_summary(title: str, segments: list[dict]) -> dict:
     }
 
 
+def _count(value: int, noun: str) -> str:
+    return f"{value} {noun}" if value == 1 else f"{value} {noun}s"
+
+
 def _duration(segments: list[dict]) -> str:
     if not segments:
         return "0 minutes"
     seconds = max(s.get("end_time", s["start_time"]) for s in segments)
-    return f"{round(seconds / 60)} minutes"
+    return _count(max(1, round(seconds / 60)), "minute")
 
 
 def _topics(segments: list[dict]) -> list[str]:

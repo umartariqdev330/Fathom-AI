@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from app.database import Base, SessionLocal, engine
 from app.models import (
     ActionItem,
+    Clip,
     Highlight,
     Meeting,
     Participant,
@@ -115,6 +116,27 @@ def add_upcoming_meeting(db, data: dict) -> Meeting:
     return meeting
 
 
+def add_demo_clip(db) -> None:
+    """A clip with a stable token, so /share/demo-clip is always a live link."""
+    meeting = db.query(Meeting).filter(Meeting.title.like("AI Platform%")).first()
+    if not meeting:
+        return
+
+    highlight = next(
+        (h for h in meeting.highlights if h.title.startswith("Partial is fine")),
+        meeting.highlights[0],
+    )
+    db.add(
+        Clip(
+            meeting_id=meeting.id,
+            title=highlight.title,
+            start_time=highlight.start_time,
+            end_time=highlight.end_time + 25,
+            share_token="demo-clip",
+        )
+    )
+
+
 def main():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
@@ -128,6 +150,8 @@ def main():
         for data in UPCOMING:
             add_upcoming_meeting(db, data)
 
+        db.flush()
+        add_demo_clip(db)
         db.commit()
 
         recorded = db.query(Meeting).filter(Meeting.status == "recorded").count()
