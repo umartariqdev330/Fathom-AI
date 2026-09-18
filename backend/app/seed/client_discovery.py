@@ -40,7 +40,7 @@ CLIENT_DISCOVERY = {
             "start": 1120,
             "lines": [
                 (JAMES["name"], "My questions are less exciting. Where does the audio live, who can read it, and what happens when someone leaves the company."),
-                (MUHAMMAD["name"], "Recordings sit in encrypted object storage, region-pinned. You are on our EU tenant so nothing crosses out of Frankfurt. Access is per workspace with role checks on every read."),
+                (MUHAMMAD["name"], "Recordings sit in encrypted object storage, region-pinned. You are on our EU tenant so nothing crosses out of Frankfurt. Access is per workspace with role checks on every API read."),
                 (JAMES["name"], "Offboarding. If an ops manager leaves on Friday, what happens to the forty meetings they recorded?"),
                 (MUHAMMAD["name"], "Today they transfer to the workspace owner when you deactivate the user. What we do not have is a bulk export for a departing employee, which I suspect is what you actually want."),
                 (JAMES["name"], "It is. Our retention policy says I have to be able to produce everything associated with a person within ten working days."),

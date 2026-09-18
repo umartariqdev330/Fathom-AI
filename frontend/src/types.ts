@@ -24,6 +24,31 @@ export type Summary = {
   generated_by: 'mock' | 'llm'
 }
 
+export type TemplateOption = {
+  id: string
+  label: string
+  description: string
+}
+
+export type SummaryItem = {
+  text: string
+  /** Set when the item is a transcript line, so it can be played. */
+  timestamp: number | null
+}
+
+export type SummarySection = {
+  label: string
+  items: SummaryItem[]
+}
+
+export type SummaryView = {
+  template: string
+  overview: string
+  sections: SummarySection[]
+  topics: string[]
+  generated_by: 'mock' | 'llm'
+}
+
 export type ActionItemStatus = 'open' | 'done'
 
 export type ActionItem = {

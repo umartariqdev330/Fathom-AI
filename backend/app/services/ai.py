@@ -95,6 +95,94 @@ def _count(value: int, noun: str) -> str:
     return f"{value} {noun}" if value == 1 else f"{value} {noun}s"
 
 
+TEMPLATE_PROMPT = """Summarise this meeting transcript under exactly these headings: {labels}.
+Return JSON: {{"overview": "2-3 sentences", "sections": {{"<heading>": ["point", ...]}}}}.
+Use 2-4 points per heading. Omit a heading only if the meeting genuinely covers nothing for it.
+
+Meeting: {title}
+Transcript:
+{transcript}"""
+
+
+def apply_template(title: str, segments: list[dict], template) -> dict:
+    """Re-read a meeting under one of the summary templates."""
+    if os.getenv("OPENAI_API_KEY"):
+        try:
+            return _llm_template(title, segments, template)
+        except Exception:
+            pass
+    return _local_template(title, segments, template)
+
+
+def _llm_template(title: str, segments: list[dict], template) -> dict:
+    transcript = "\n".join(f"{s['speaker']}: {s['text']}" for s in segments)
+    labels = ", ".join(section.label for section in template.sections)
+    response = httpx.post(
+        API_URL,
+        headers={"Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]},
+        json={
+            "model": MODEL,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": TEMPLATE_PROMPT.format(labels=labels, title=title, transcript=transcript),
+                }
+            ],
+            "response_format": {"type": "json_object"},
+        },
+        timeout=60,
+    )
+    response.raise_for_status()
+    data = json.loads(response.json()["choices"][0]["message"]["content"])
+    sections = [
+        {"label": section.label, "items": [{"text": point, "timestamp": None} for point in data["sections"].get(section.label, [])]}
+        for section in template.sections
+    ]
+    return {
+        "overview": data.get("overview", ""),
+        "sections": [s for s in sections if s["items"]],
+        "topics": _topics(segments),
+        "generated_by": "llm",
+    }
+
+
+def _local_template(title: str, segments: list[dict], template) -> dict:
+    """Pull the lines that match each section's cues.
+
+    Items are transcript lines rather than paraphrases, so the timestamp on each
+    one is exact and clicking it lands on the moment it came from.
+    """
+    used: set[int] = set()
+    sections = []
+
+    for section in template.sections:
+        matches = [
+            s
+            for i, s in enumerate(segments)
+            if i not in used and _matches(s["text"], section.cues) and len(s["text"]) > 60
+        ]
+        chosen = sorted(matches, key=lambda s: len(s["text"]), reverse=True)[:3]
+        used.update(segments.index(s) for s in chosen)
+
+        if chosen:
+            sections.append(
+                {
+                    "label": section.label,
+                    "items": [
+                        {"text": s["text"], "timestamp": s["start_time"]}
+                        for s in sorted(chosen, key=lambda s: s["start_time"])
+                    ],
+                }
+            )
+
+    return {
+        "overview": _local_summary(title, segments)["overview"],
+        "sections": sections,
+        "topics": _topics(segments),
+        "generated_by": "mock",
+    }
+
+
 def _duration(segments: list[dict]) -> str:
     if not segments:
         return "0 minutes"

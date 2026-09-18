@@ -27,6 +27,7 @@ export function MeetingDetail() {
   const toast = useToast()
 
   const [tab, setTab] = useState<Tab>('summary')
+  const [template, setTemplate] = useState('general')
   const [highlightTarget, setHighlightTarget] = useState<TranscriptSegment | null>(null)
   const [clipRange, setClipRange] = useState<ClipRange | null>(null)
 
@@ -184,7 +185,14 @@ export function MeetingDetail() {
               ))}
             </div>
 
-            {tab === 'summary' && <SummaryPanel summary={meeting.summary} />}
+            {tab === 'summary' && (
+              <SummaryPanel
+                meetingId={meeting.id}
+                template={template}
+                onTemplateChange={setTemplate}
+                onPlay={playFrom}
+              />
+            )}
             {tab === 'actions' && <ActionItems meeting={meeting} />}
             {tab === 'highlights' && (
               <HighlightList meeting={meeting} onPlay={playFrom} onShareClip={shareHighlight} />

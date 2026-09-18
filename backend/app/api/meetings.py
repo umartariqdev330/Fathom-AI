@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.database import get_db
+from app.services import ai, templates
 
 router = APIRouter(prefix="/api", tags=["meetings"])
 
@@ -58,12 +59,57 @@ def get_transcript(meeting_id: int, db: Session = Depends(get_db)):
     return get_meeting_or_404(meeting_id, db).segments
 
 
-@router.get("/meetings/{meeting_id}/summary", response_model=schemas.Summary)
-def get_summary(meeting_id: int, db: Session = Depends(get_db)):
-    summary = get_meeting_or_404(meeting_id, db).summary
+@router.get("/templates", response_model=list[schemas.TemplateOption])
+def list_templates():
+    return [
+        schemas.TemplateOption(id=t.id, label=t.label, description=t.description)
+        for t in templates.TEMPLATES.values()
+    ]
+
+
+@router.get("/meetings/{meeting_id}/summary", response_model=schemas.SummaryView)
+def get_summary(
+    meeting_id: int, template: str = templates.DEFAULT_TEMPLATE, db: Session = Depends(get_db)
+):
+    meeting = get_meeting_or_404(meeting_id, db)
+    chosen = templates.get(template)
+
+    if chosen.id == templates.DEFAULT_TEMPLATE:
+        return stored_summary_view(meeting)
+
+    segments = [
+        {"speaker": s.speaker, "start_time": s.start_time, "end_time": s.end_time, "text": s.text}
+        for s in meeting.segments
+    ]
+    if not segments:
+        raise HTTPException(status_code=404, detail="This meeting has no transcript to summarise")
+
+    generated = ai.apply_template(meeting.title, segments, chosen)
+    return schemas.SummaryView(template=chosen.id, **generated)
+
+
+def stored_summary_view(meeting: models.Meeting) -> schemas.SummaryView:
+    """The seeded summary, shaped like every other template."""
+    summary = meeting.summary
     if not summary:
         raise HTTPException(status_code=404, detail="No summary for this meeting")
-    return summary
+
+    groups = [
+        ("Key points", summary.key_points),
+        ("Decisions", summary.decisions),
+        ("AI insights", summary.insights),
+    ]
+    return schemas.SummaryView(
+        template=templates.DEFAULT_TEMPLATE,
+        overview=summary.overview,
+        sections=[
+            schemas.SummarySection(label=label, items=[schemas.SummaryItem(text=t) for t in texts])
+            for label, texts in groups
+            if texts
+        ],
+        topics=summary.topics or [],
+        generated_by=summary.generated_by,
+    )
 
 
 @router.get("/stats", response_model=schemas.Stats)

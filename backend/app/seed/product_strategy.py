@@ -18,7 +18,7 @@ PRODUCT_STRATEGY = {
                 (RYAN["name"], "To be blunt about the constraint: we have eleven engineers and the board deck says we ship three things. Not seven. Three."),
                 (SARAH["name"], "Right. So the question for this hour is which three, and what we are explicitly not doing."),
                 (DANIEL["name"], "Can we agree on how we are judging them first? Otherwise we will argue in circles about pet features."),
-                (SARAH["name"], "Fair. Two criteria. Does it reduce churn in the mid-market segment, and can it ship before the end of November."),
+                (SARAH["name"], "Fair. Two criteria. Does it reduce churn in the mid-market segment, and can it ship before the November deadline."),
             ],
         },
         {

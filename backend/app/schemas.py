@@ -33,6 +33,33 @@ class Summary(Base):
     generated_by: str = "mock"
 
 
+class SummaryItem(BaseModel):
+    text: str
+    # Set when the item is a transcript line, so the reader can jump to it.
+    timestamp: float | None = None
+
+
+class SummarySection(BaseModel):
+    label: str
+    items: list[SummaryItem]
+
+
+class SummaryView(BaseModel):
+    """A meeting summary read through one template."""
+
+    template: str
+    overview: str
+    sections: list[SummarySection] = []
+    topics: list[str] = []
+    generated_by: str = "mock"
+
+
+class TemplateOption(BaseModel):
+    id: str
+    label: str
+    description: str
+
+
 class ActionItem(Base):
     id: int
     meeting_id: int

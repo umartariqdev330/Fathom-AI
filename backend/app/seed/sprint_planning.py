@@ -15,7 +15,7 @@ SPRINT_PLANNING = {
             "start": 0,
             "lines": [
                 (MUHAMMAD["name"], "Sprint 34, two weeks. Before we pull anything in, let us be honest about capacity. Hana is at fifty percent because of the SOC 2 evidence collection."),
-                (HANA["name"], "Closer to forty. The auditor comes back on the eighth and everything they asked for lands on me."),
+                (HANA["name"], "Closer to forty. The auditor deadline is the eighth and everything they asked for lands on me."),
                 (MUHAMMAD["name"], "Forty then. Victor is fully on the pgvector spike, which is the architecture review follow-up, so he is not available for feature work."),
                 (VICTOR["name"], "I would rather that be explicit on the board than discovered in week two."),
                 (MUHAMMAD["name"], "It is. So realistically we have Alex, Ayesha and me at full capacity plus Daniel on design. That is the sprint."),
@@ -54,7 +54,7 @@ SPRINT_PLANNING = {
             "title": "Commit",
             "start": 2280,
             "lines": [
-                (MUHAMMAD["name"], "Committing: chunking epic at thirteen, search pagination at three, partial summary design at two, plus the usual support rotation."),
+                (MUHAMMAD["name"], "Committing: chunking epic at thirteen, search pagination at three, partial summary design at two, plus the usual support and deployment rotation."),
                 (MUHAMMAD["name"], "Not committing: transcript export, the Slack integration spike, and the onboarding tour."),
                 (SARAH["name"], "That is a smaller sprint than the last two."),
                 (MUHAMMAD["name"], "It is, and the last two both spilled. I would rather commit less and finish it."),

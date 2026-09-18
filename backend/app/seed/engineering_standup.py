@@ -3,7 +3,7 @@ from app.seed.base import SARAH, MUHAMMAD, ALEX, DANIEL, AYESHA, RYAN
 
 ENGINEERING_STANDUP = {
     "title": "Weekly Engineering Standup",
-    "description": "Blockers on the transcript chunking work and the staging deploy that went sideways.",
+    "description": "Blockers on the transcript chunking work and the staging deployment that went sideways.",
     "meeting_type": "Internal",
     "platform": "Zoom",
     "days_ago": 2,
@@ -15,7 +15,7 @@ ENGINEERING_STANDUP = {
             "start": 0,
             "lines": [
                 (MUHAMMAD["name"], "Quick one today, twenty minutes. Blockers first, status after. Alex, you go."),
-                (ALEX["name"], "Blocked, and it is my own fault. The staging deploy on Friday took the transcript service down for about forty minutes and I have been in the postmortem since."),
+                (ALEX["name"], "Blocked, and it is my own fault. The staging deployment on Friday took the transcript service down for about forty minutes and I have been in the postmortem since."),
                 (MUHAMMAD["name"], "What actually broke?"),
                 (ALEX["name"], "Migration ordering. I added a not-null column to transcript_segments and the old pods were still writing rows without it. Classic, and entirely avoidable."),
                 (RYAN["name"], "Did any customer data get lost?"),
@@ -51,7 +51,7 @@ ENGINEERING_STANDUP = {
     ],
     "summary": {
         "overview": (
-            "Standup was dominated by two threads: the Friday staging deploy that took the "
+            "Standup was dominated by two threads: the Friday staging deployment that took the "
             "transcript service down for forty minutes, and progress on chunked summarisation, "
             "which now works end to end on the longest meeting in the corpus but attributes "
             "contested points to a single speaker."
@@ -74,7 +74,7 @@ ENGINEERING_STANDUP = {
         ],
     },
     "action_items": [
-        {"task": "Write up the Friday staging deploy postmortem", "assignee": "Alex Johnson", "due_date": "Sep 24", "status": "done", "timestamp": 400},
+        {"task": "Write up the Friday staging deployment postmortem", "assignee": "Alex Johnson", "due_date": "Sep 24", "status": "done", "timestamp": 400},
         {"task": "Add speaker turn counts to summarisation chunks", "assignee": "Ayesha Malik", "due_date": "Sep 24", "status": "open", "timestamp": 780},
         {"task": "Cap search results at 60 and show a total count", "assignee": "Muhammad Umar", "due_date": "Sep 25", "status": "open", "timestamp": 1120},
         {"task": "Clickable detail page prototype for Thursday", "assignee": "Daniel Kim", "due_date": "Sep 25", "status": "open", "timestamp": 920},

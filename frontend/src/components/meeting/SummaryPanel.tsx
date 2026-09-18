@@ -1,92 +1,133 @@
-import { CircleCheck, Lightbulb, ListChecks, Sparkles } from 'lucide-react'
-import type { Summary } from '../../types'
-import { Badge, EmptyState, SectionLabel } from '../ui'
+import { useQuery } from '@tanstack/react-query'
+import { CircleCheck, Lightbulb, ListChecks, Play, Sparkles } from 'lucide-react'
+import { api } from '../../lib/api'
+import { timecode } from '../../lib/format'
+import { Badge, EmptyState, ErrorState, SectionLabel, Skeleton, cx } from '../ui'
 
-export function SummaryPanel({ summary }: { summary: Summary | null }) {
-  if (!summary) {
-    return (
-      <EmptyState
-        icon={<Sparkles size={22} />}
-        title="No summary yet"
-        description="This meeting has not been processed."
-      />
-    )
-  }
+const SECTION_ICON: Record<string, React.ReactNode> = {
+  'Key points': <ListChecks size={13} />,
+  Decisions: <CircleCheck size={13} />,
+  'AI insights': <Lightbulb size={13} />,
+}
+
+export function SummaryPanel({
+  meetingId,
+  template,
+  onTemplateChange,
+  onPlay,
+}: {
+  meetingId: number
+  template: string
+  onTemplateChange: (template: string) => void
+  onPlay: (time: number) => void
+}) {
+  const templates = useQuery({ queryKey: ['templates'], queryFn: api.templates })
+
+  const { data, isPending, error, refetch } = useQuery({
+    queryKey: ['summary', meetingId, template],
+    queryFn: () => api.summary(meetingId, template),
+  })
+
+  const active = templates.data?.find((option) => option.id === template)
 
   return (
-    <div className="max-w-3xl space-y-7 p-5 lg:p-6">
-      <section>
-        <SectionLabel icon={<Sparkles size={13} />} className="mb-3">
-          Overview
-        </SectionLabel>
-        <p className="text-[15px] leading-[1.7] text-ink">{summary.overview}</p>
-        <div className="mt-3.5 flex flex-wrap gap-1.5">
-          {summary.topics.map((topic) => (
-            <Badge key={topic} tone="accent">
-              {topic}
-            </Badge>
+    <div className="max-w-3xl p-5 lg:p-6">
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <label className="text-[11px] font-semibold tracking-[0.07em] text-ink-faint uppercase">
+          Summary template
+        </label>
+        <select
+          value={template}
+          onChange={(event) => onTemplateChange(event.target.value)}
+          aria-label="Summary template"
+          className="h-8 rounded-lg border border-line bg-canvas px-2 text-[13px] font-medium text-ink outline-none focus:border-accent"
+        >
+          {(templates.data ?? []).map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
           ))}
+        </select>
+        {active && <span className="text-xs text-ink-faint">{active.description}</span>}
+      </div>
+
+      {isPending && (
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-11/12" />
+          <Skeleton className="h-24 w-full" />
         </div>
-      </section>
-
-      {summary.key_points.length > 0 && (
-        <section>
-          <SectionLabel icon={<ListChecks size={13} />} className="mb-3">
-            Key points
-          </SectionLabel>
-          <ul className="space-y-2.5">
-            {summary.key_points.map((point) => (
-              <li key={point} className="flex gap-3 text-sm leading-[1.65] text-ink-soft">
-                <span className="mt-[9px] size-1 shrink-0 rounded-full bg-ink-faint" />
-                {point}
-              </li>
-            ))}
-          </ul>
-        </section>
       )}
 
-      {summary.decisions.length > 0 && (
-        <section>
-          <SectionLabel icon={<CircleCheck size={13} />} className="mb-3">
-            Decisions
-          </SectionLabel>
-          <ul className="space-y-2">
-            {summary.decisions.map((decision) => (
-              <li
-                key={decision}
-                className="flex gap-2.5 rounded-lg border border-line bg-canvas px-3.5 py-3 text-sm leading-[1.6] text-ink-soft"
-              >
-                <CircleCheck size={15} className="mt-0.5 shrink-0 text-positive" />
-                {decision}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {error && <ErrorState message={(error as Error).message} onRetry={refetch} />}
 
-      {summary.insights.length > 0 && (
-        <section>
-          <SectionLabel icon={<Lightbulb size={13} />} className="mb-3">
-            AI insights
-          </SectionLabel>
-          <ul className="space-y-3">
-            {summary.insights.map((insight) => (
-              <li
-                key={insight}
-                className="border-l-2 border-accent/35 pl-3.5 text-sm leading-[1.65] text-ink-soft"
-              >
-                {insight}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {data && (
+        <div className="space-y-7">
+          <section>
+            <SectionLabel icon={<Sparkles size={13} />} className="mb-3">
+              Overview
+            </SectionLabel>
+            <p className="text-[15px] leading-[1.7] text-ink">{data.overview}</p>
+            {data.topics.length > 0 && (
+              <div className="mt-3.5 flex flex-wrap gap-1.5">
+                {data.topics.map((topic) => (
+                  <Badge key={topic} tone="accent">
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </section>
 
-      <p className="border-t border-line pt-3.5 text-xs text-ink-faint">
-        {summary.generated_by === 'llm'
-          ? 'Generated by the configured language model.'
-          : 'Generated without an LLM key, using the built-in fallback summariser.'}
-      </p>
+          {data.sections.map((section) => (
+            <section key={section.label}>
+              <SectionLabel icon={SECTION_ICON[section.label] ?? <ListChecks size={13} />} className="mb-3">
+                {section.label}
+              </SectionLabel>
+              <ul className="space-y-2">
+                {section.items.map((item) => (
+                  <li key={item.text}>
+                    {item.timestamp === null ? (
+                      <p className="flex gap-3 text-sm leading-[1.65] text-ink-soft">
+                        <span className="mt-[9px] size-1 shrink-0 rounded-full bg-ink-faint" />
+                        {item.text}
+                      </p>
+                    ) : (
+                      // Generated items are quoted transcript lines, so the
+                      // timestamp is exact and worth making playable.
+                      <button
+                        onClick={() => onPlay(item.timestamp!)}
+                        className="group flex w-full gap-3 rounded-lg border border-line bg-canvas px-3.5 py-3 text-left transition-colors hover:border-line-strong hover:bg-raised"
+                      >
+                        <span className="mt-0.5 flex shrink-0 items-center gap-1 font-mono text-[11px] text-ink-faint transition-colors group-hover:text-accent">
+                          <Play size={11} />
+                          {timecode(item.timestamp)}
+                        </span>
+                        <span className="text-sm leading-[1.6] text-ink-soft">{item.text}</span>
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+
+          {data.sections.length === 0 && (
+            <EmptyState
+              title="Nothing for this template"
+              description="This meeting does not cover the sections this template looks for. Try another one."
+            />
+          )}
+
+          <p className={cx('border-t border-line pt-3.5 text-xs text-ink-faint')}>
+            {data.generated_by === 'llm'
+              ? 'Generated by the configured language model.'
+              : template === 'general'
+                ? 'AI summary generated when this meeting was processed.'
+                : 'Re-generated from the transcript without an LLM key, using the built-in fallback.'}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

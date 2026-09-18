@@ -8,6 +8,8 @@ import type {
   SearchResponse,
   SharedClip,
   Stats,
+  SummaryView,
+  TemplateOption,
 } from '../types'
 
 // Empty in dev, where Vite proxies /api to the local backend.
@@ -34,6 +36,11 @@ export const api = {
     request<MeetingCard[]>(`/api/meetings?status=${status}`),
 
   meeting: (id: number) => request<Meeting>(`/api/meetings/${id}`),
+
+  templates: () => request<TemplateOption[]>('/api/templates'),
+
+  summary: (meetingId: number, template: string) =>
+    request<SummaryView>(`/api/meetings/${meetingId}/summary?template=${template}`),
 
   deleteMeeting: (id: number) => request<void>(`/api/meetings/${id}`, { method: 'DELETE' }),
 
