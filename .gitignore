@@ -10,3 +10,8 @@ dist/
 .DS_Store
 
 # .agent-logs/ is deliberately NOT ignored — it ships with the repo.
+meetly.db
+__pycache__/
+*.pyc
+venv/
+.venv/

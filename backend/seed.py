@@ -1,0 +1,142 @@
+"""Rebuild the database with the demo workspace.
+
+Run from the backend directory:  python seed.py
+"""
+
+from datetime import datetime, timedelta
+
+from app.database import Base, SessionLocal, engine
+from app.models import (
+    ActionItem,
+    Highlight,
+    Meeting,
+    Participant,
+    Summary,
+    TranscriptSegment,
+    User,
+)
+from app.seed import MEETINGS, SAMPLE_VIDEO, UPCOMING, build_segments
+
+OWNER = {"name": "Muhammad Umar", "email": "muhammad@meetly.ai"}
+
+
+def at(days_offset: int, hour: int) -> datetime:
+    day = datetime.utcnow() + timedelta(days=days_offset)
+    return day.replace(hour=hour, minute=0, second=0, microsecond=0)
+
+
+def nearest_segment(segments: list[dict], time: float) -> int:
+    """Index of the segment starting closest to `time`.
+
+    Action-item timestamps are authored by hand against the shape of the
+    conversation while segment times are generated from speaking pace, so they
+    are approximate. Snapping keeps them on a real line rather than in a gap.
+    """
+    return min(range(len(segments)), key=lambda i: abs(segments[i]["start_time"] - time))
+
+
+def segment_matching(segments: list[dict], quote: str) -> int:
+    """Index of the segment containing `quote`.
+
+    Highlights are anchored to the words they refer to rather than to a
+    timestamp, so they stay correct when speaking pace changes. A stale anchor
+    raises here, at seed time, instead of shipping a highlight that plays the
+    wrong moment.
+    """
+    for i, segment in enumerate(segments):
+        if quote in segment["text"]:
+            return i
+    raise ValueError(f"No transcript segment contains: {quote!r}")
+
+
+def add_recorded_meeting(db, data: dict) -> Meeting:
+    segments = build_segments(data["blocks"])
+    duration = int(segments[-1]["end_time"]) + 20  # a short tail after the last word
+
+    meeting = Meeting(
+        title=data["title"],
+        description=data["description"],
+        date=at(-data["days_ago"], data["hour"]),
+        duration=duration,
+        meeting_type=data["meeting_type"],
+        platform=data["platform"],
+        recording_url=SAMPLE_VIDEO,
+        status="recorded",
+    )
+    db.add(meeting)
+    db.flush()
+
+    for person in data["participants"]:
+        db.add(Participant(meeting_id=meeting.id, **person))
+
+    for segment in segments:
+        db.add(TranscriptSegment(meeting_id=meeting.id, **segment))
+
+    db.add(Summary(meeting_id=meeting.id, generated_by="mock", **data["summary"]))
+
+    for item in data["action_items"]:
+        item = dict(item)
+        if item.get("timestamp") is not None:
+            item["timestamp"] = segments[nearest_segment(segments, item["timestamp"])]["start_time"]
+        db.add(ActionItem(meeting_id=meeting.id, **item))
+
+    for highlight in data["highlights"]:
+        highlight = dict(highlight)
+        start = segment_matching(segments, highlight.pop("quote"))
+        end = min(start + 1, len(segments) - 1)  # a highlight covers a line or two
+        db.add(
+            Highlight(
+                meeting_id=meeting.id,
+                start_time=segments[start]["start_time"],
+                end_time=segments[end]["end_time"],
+                transcript_excerpt=segments[start]["text"],
+                **highlight,
+            )
+        )
+
+    return meeting
+
+
+def add_upcoming_meeting(db, data: dict) -> Meeting:
+    meeting = Meeting(
+        title=data["title"],
+        description=data["description"],
+        date=at(data["days_ahead"], data["hour"]),
+        duration=data["duration"],
+        meeting_type=data["meeting_type"],
+        platform=data["platform"],
+        status="upcoming",
+    )
+    db.add(meeting)
+    db.flush()
+
+    for person in data["participants"]:
+        db.add(Participant(meeting_id=meeting.id, **person))
+    return meeting
+
+
+def main():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    db = SessionLocal()
+    try:
+        db.add(User(**OWNER))
+
+        for data in MEETINGS:
+            add_recorded_meeting(db, data)
+        for data in UPCOMING:
+            add_upcoming_meeting(db, data)
+
+        db.commit()
+
+        recorded = db.query(Meeting).filter(Meeting.status == "recorded").count()
+        upcoming = db.query(Meeting).filter(Meeting.status == "upcoming").count()
+        segments = db.query(TranscriptSegment).count()
+        print(f"Seeded {recorded} recorded meetings, {upcoming} upcoming, {segments} transcript segments.")
+    finally:
+        db.close()
+
+
+if __name__ == "__main__":
+    main()
