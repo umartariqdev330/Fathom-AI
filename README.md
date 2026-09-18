@@ -110,13 +110,17 @@ matching, seeding fails loudly instead of shipping a highlight that plays the wr
 
 ## AI
 
-`backend/app/services/ai.py` exposes one function, `summarise(title, segments)`.
+`backend/app/services/ai.py` exposes two functions: `summarise(title, segments)` for a
+meeting's own summary, and `apply_template(title, segments, template)` for reading it back
+under one of the templates in `services/templates.py`.
 
 - **With `OPENAI_API_KEY` set** — the transcript goes to the model and comes back as
-  structured JSON: overview, key points, decisions, topics, insights, action items.
-- **Without a key** — a local summariser derives the same shape from the transcript:
-  longest contributions as key points, phrase matching for decisions and action items,
-  and term frequency for topics.
+  structured JSON: overview, key points, decisions, topics, insights, action items. For a
+  template, the model is asked for exactly that template's headings.
+- **Without a key** — the transcript is processed locally: longest contributions as key
+  points, phrase matching for decisions and action items, term frequency for topics. For a
+  template, each section pulls the transcript lines matching its cues, which is why those
+  points are quotes with exact timestamps rather than paraphrases.
 
 If the API call fails for any reason, the fallback runs instead. The product never breaks
 because an external service is unreachable, and it never requires a key to be useful. The
