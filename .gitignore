@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+.env
+.env*.local
+.vercel
+*.tsbuildinfo
+.DS_Store
+
+# .agent-logs/ is deliberately NOT ignored — it ships with the repo.
