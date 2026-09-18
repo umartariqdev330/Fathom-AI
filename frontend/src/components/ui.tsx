@@ -11,18 +11,18 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 const BUTTON_VARIANTS = {
-  primary: 'bg-accent text-white hover:opacity-90',
-  secondary: 'bg-surface text-ink border border-line hover:bg-raised',
+  primary: 'bg-accent text-white shadow-[var(--shadow-card)] hover:brightness-110 active:brightness-95',
+  secondary: 'bg-surface text-ink border border-line hover:border-line-strong hover:bg-raised',
   ghost: 'text-ink-soft hover:bg-raised hover:text-ink',
-  danger: 'text-critical hover:bg-critical/10',
+  danger: 'text-ink-faint hover:bg-critical/10 hover:text-critical',
 }
 
 export function Button({ variant = 'secondary', size = 'md', className, ...props }: ButtonProps) {
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition',
-        'disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg font-medium transition-[background-color,border-color,color,filter,opacity] duration-150',
+        'disabled:pointer-events-none disabled:opacity-45',
         size === 'sm' ? 'h-8 px-2.5 text-[13px]' : 'h-9 px-3.5 text-sm',
         BUTTON_VARIANTS[variant],
         className,
@@ -34,7 +34,34 @@ export function Button({ variant = 'secondary', size = 'md', className, ...props
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={cx('rounded-xl border border-line bg-surface', className)}>{children}</div>
+    <div
+      className={cx('rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]', className)}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** The small uppercase label above a group of content. */
+export function SectionLabel({
+  icon,
+  children,
+  className,
+}: {
+  icon?: ReactNode
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <h3
+      className={cx(
+        'flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.07em] text-ink-faint uppercase',
+        className,
+      )}
+    >
+      {icon}
+      {children}
+    </h3>
   )
 }
 
@@ -112,6 +139,11 @@ export function AvatarStack({
       )}
     </div>
   )
+}
+
+/** Separator between inline metadata items. */
+export function Dot() {
+  return <span className="size-0.5 rounded-full bg-ink-faint" aria-hidden />
 }
 
 export function Skeleton({ className }: { className?: string }) {

@@ -6,7 +6,7 @@ import type { Highlight, TranscriptSegment } from '../types'
 import { api } from '../lib/api'
 import { durationLabel, meetingDate, meetingTime } from '../lib/format'
 import { usePlayer } from '../hooks/usePlayer'
-import { AvatarStack, Badge, Button, ErrorState, Skeleton, cx } from '../components/ui'
+import { AvatarStack, Badge, Button, Dot, ErrorState, Skeleton, cx } from '../components/ui'
 import { useToast } from '../components/Toast'
 import { RecordingPlayer } from '../components/meeting/Player'
 import { Transcript } from '../components/meeting/Transcript'
@@ -89,13 +89,16 @@ export function MeetingDetail() {
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight text-ink">{meeting.title}</h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-soft">
-              <span>
-                {meetingDate(meeting.date)} · {meetingTime(meeting.date)}
-              </span>
+            <h1 className="text-[22px] font-semibold text-ink">{meeting.title}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-ink-soft">
+              <span>{meetingDate(meeting.date)}</span>
+              <Dot />
+              <span>{meetingTime(meeting.date)}</span>
+              <Dot />
               <span>{durationLabel(meeting.duration)}</span>
-              <Badge>{meeting.meeting_type}</Badge>
+              <Badge tone={meeting.meeting_type === 'External' ? 'accent' : 'neutral'}>
+                {meeting.meeting_type}
+              </Badge>
               {meeting.platform && <Badge>{meeting.platform}</Badge>}
             </div>
           </div>
@@ -134,6 +137,7 @@ export function MeetingDetail() {
           <RecordingPlayer
             player={player}
             duration={meeting.duration}
+            platform={meeting.platform}
             participants={meeting.participants}
             activeSegment={activeSegment}
             highlights={meeting.highlights}
@@ -147,7 +151,10 @@ export function MeetingDetail() {
           />
 
           <div className="overflow-hidden rounded-xl border border-line bg-surface">
-            <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-line px-2 py-1.5">
+            <div
+              role="tablist"
+              className="flex gap-0.5 overflow-x-auto border-b border-line px-2 pt-1.5 scrollbar-slim"
+            >
               {tabs.map((item) => (
                 <button
                   key={item.id}
@@ -155,16 +162,23 @@ export function MeetingDetail() {
                   aria-selected={tab === item.id}
                   onClick={() => setTab(item.id)}
                   className={cx(
-                    'shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition',
+                    'shrink-0 border-b-2 px-3 pb-2.5 text-sm font-medium transition-colors',
                     item.smallOnly && 'lg:hidden',
                     tab === item.id
-                      ? 'bg-raised text-ink'
-                      : 'text-ink-soft hover:bg-raised hover:text-ink',
+                      ? 'border-accent text-ink'
+                      : 'border-transparent text-ink-soft hover:text-ink',
                   )}
                 >
                   {item.label}
                   {item.count !== undefined && (
-                    <span className="ml-1.5 text-xs text-ink-faint">{item.count}</span>
+                    <span
+                      className={cx(
+                        'ml-1.5 rounded px-1 py-0.5 text-[11px] tabular-nums',
+                        tab === item.id ? 'bg-accent-soft text-accent-ink' : 'text-ink-faint',
+                      )}
+                    >
+                      {item.count}
+                    </span>
                   )}
                 </button>
               ))}

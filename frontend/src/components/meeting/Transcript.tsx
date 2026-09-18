@@ -90,46 +90,66 @@ export function Transcript({ segments, meetingTitle, activeId, onSeek, onHighlig
       )}
 
       <ul
-        className="min-h-0 flex-1 overflow-y-auto px-1.5 py-2 scrollbar-slim"
+        className="min-h-0 flex-1 overflow-y-auto px-2 py-2 scrollbar-slim"
         onWheel={() => setAutoScroll(false)}
       >
-        {visible.map((segment) => {
+        {visible.map((segment, index) => {
           const active = segment.id === activeId
+          // Consecutive lines from one speaker read as a single turn, so the
+          // name and avatar only appear when the speaker actually changes.
+          const continues = visible[index - 1]?.speaker === segment.speaker
+
           return (
             <li key={segment.id} ref={active ? activeRef : undefined}>
               <div
+                // Clicking a line seeks to it, unless the click was a text selection.
+                onClick={() => {
+                  if (window.getSelection()?.toString()) return
+                  setAutoScroll(true)
+                  onSeek(segment.start_time)
+                }}
                 className={cx(
-                  'group relative rounded-lg px-2 py-2 transition',
-                  active ? 'bg-accent-soft' : 'hover:bg-raised',
+                  'group relative cursor-pointer rounded-lg border-l-2 py-1.5 pr-1.5 pl-2.5 transition-colors',
+                  continues ? 'mt-0' : 'mt-2 first:mt-0',
+                  active
+                    ? 'border-accent bg-accent-soft/70'
+                    : 'border-transparent hover:bg-raised',
                 )}
               >
-                <div className="flex items-center gap-2">
-                  <Avatar name={segment.speaker} size={22} />
-                  <span className="text-[13px] font-medium text-ink">{segment.speaker}</span>
-                  <button
-                    onClick={() => {
-                      setAutoScroll(true)
-                      onSeek(segment.start_time)
-                    }}
-                    className="font-mono text-[11px] text-ink-faint transition hover:text-accent"
-                    aria-label={`Play from ${timecode(segment.start_time)}`}
-                  >
-                    {timecode(segment.start_time)}
-                  </button>
+                {!continues && (
+                  <div className="mb-1 flex items-center gap-2">
+                    <Avatar name={segment.speaker} size={20} />
+                    <span className="text-[13px] font-semibold text-ink">{segment.speaker}</span>
+                    <button
+                      onClick={() => {
+                        setAutoScroll(true)
+                        onSeek(segment.start_time)
+                      }}
+                      className="font-mono text-[11px] text-ink-faint transition hover:text-accent"
+                      aria-label={`Play from ${timecode(segment.start_time)}`}
+                    >
+                      {timecode(segment.start_time)}
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-2 pl-7">
+                  <p className="min-w-0 flex-1 text-[13.5px] leading-[1.65] text-ink-soft">
+                    {mark(segment.text, query)}
+                  </p>
 
                   <button
-                    onClick={() => onHighlight(segment)}
-                    className="ml-auto rounded-md p-1 text-ink-faint opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100 hover:text-accent"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onHighlight(segment)
+                    }}
+                    className="shrink-0 rounded-md p-1 text-ink-faint opacity-0 transition hover:text-accent group-hover:opacity-100 focus-visible:opacity-100"
                     aria-label={`Highlight this moment at ${timecode(segment.start_time)}`}
                     title="Add highlight"
                   >
-                    <Star size={14} />
+                    <Star size={13} />
                   </button>
                 </div>
-
-                <p className="mt-1 pl-7.5 text-sm leading-relaxed text-ink-soft">
-                  {mark(segment.text, query)}
-                </p>
               </div>
             </li>
           )

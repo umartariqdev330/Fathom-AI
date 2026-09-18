@@ -29,7 +29,9 @@ export function SharedClipPage() {
   }, [data, seek])
 
   const absoluteTime = (data?.clip.start_time ?? 0) + currentTime
-  const activeId = data?.segments.findLast?.((segment) => segment.start_time <= absoluteTime)?.id
+  const activeLine = data?.segments.findLast?.((segment) => segment.start_time <= absoluteTime)
+  const activeId = activeLine?.id
+  const activeSpeaker = activeLine?.speaker ?? data?.participants[0]?.name ?? 'Meetly'
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -75,20 +77,17 @@ export function SharedClipPage() {
               </span>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-line bg-surface">
-              <div className="relative aspect-video bg-gradient-to-b from-[#1f1f26] to-[#101014]">
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                  <Avatar
-                    name={
-                      data.segments.findLast?.((s) => s.start_time <= absoluteTime)?.speaker ??
-                      data.participants[0]?.name ??
-                      'Meetly'
-                    }
-                    size={64}
-                  />
-                  <p className="line-clamp-3 max-w-lg text-[15px] leading-relaxed text-white/75">
-                    {data.segments.findLast?.((s) => s.start_time <= absoluteTime)?.text ??
-                      'Press play to watch this moment.'}
+            <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]">
+              {/* Same stage language as the in-app player, without its transport. */}
+              <div className="flex aspect-video flex-col bg-[#121216]">
+                <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5">
+                  <Avatar name={activeSpeaker} size={56} />
+                  <p className="text-sm font-medium text-white/90">{activeSpeaker}</p>
+                </div>
+
+                <div className="bg-gradient-to-t from-black/70 to-transparent px-5 pt-8 pb-3.5">
+                  <p className="mx-auto line-clamp-2 max-w-2xl text-center text-[13px] leading-relaxed text-white/80 sm:text-sm">
+                    {activeLine?.text ?? 'Press play to watch this moment.'}
                   </p>
                 </div>
               </div>

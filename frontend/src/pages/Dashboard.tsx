@@ -150,18 +150,26 @@ function Stat({
   to?: string
 }) {
   const body = (
-    <Card className="p-4 transition hover:border-line-strong">
-      <div className="flex items-center gap-1.5 text-ink-faint">
+    <Card className="flex items-center gap-3 p-3.5 transition-colors hover:border-line-strong">
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-raised text-ink-soft">
         {icon}
-        <span className="text-xs font-medium">{label}</span>
+      </span>
+      <div className="min-w-0">
+        {loading ? (
+          <Skeleton className="h-6 w-10" />
+        ) : (
+          <p className="text-xl font-semibold text-ink tabular-nums">{value ?? 0}</p>
+        )}
+        <p className="mt-0.5 truncate text-xs text-ink-faint">{label}</p>
       </div>
-      {loading ? (
-        <Skeleton className="mt-2 h-7 w-12" />
-      ) : (
-        <p className="mt-1.5 text-2xl font-semibold tracking-tight text-ink">{value ?? 0}</p>
-      )}
     </Card>
   )
 
-  return to ? <Link to={to}>{body}</Link> : body
+  return to ? (
+    <Link to={to} className="block">
+      {body}
+    </Link>
+  ) : (
+    body
+  )
 }

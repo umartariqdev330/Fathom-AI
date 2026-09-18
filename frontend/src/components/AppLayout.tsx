@@ -162,15 +162,15 @@ export function PageHeader({
   actions?: React.ReactNode
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line px-5 py-5 lg:px-8">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-ink-soft">{subtitle}</p>}
+    <div className="sticky top-14 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-canvas/85 px-5 py-4 backdrop-blur-md lg:top-0 lg:px-8">
+      <div className="min-w-0">
+        <h1 className="text-[22px] font-semibold text-ink">{title}</h1>
+        {subtitle && <p className="mt-0.5 truncate text-[13px] text-ink-soft">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2">
         {actions}
         <button
-          className="hidden size-9 items-center justify-center rounded-lg text-ink-soft transition hover:bg-raised sm:inline-flex"
+          className="hidden size-9 items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-raised hover:text-ink sm:inline-flex"
           aria-label="Notifications"
         >
           <Bell size={17} />

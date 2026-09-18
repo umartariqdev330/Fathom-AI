@@ -32,7 +32,7 @@ export function MeetingListItem({ meeting }: { meeting: MeetingCard }) {
     <li>
       <Link
         to={`/meetings/${meeting.id}`}
-        className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4 transition hover:border-line-strong hover:bg-raised/40"
+        className="flex items-start gap-3.5 rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] transition-colors hover:border-line-strong hover:bg-raised/50"
       >
         <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-ink">
           <Video size={16} />
@@ -40,13 +40,14 @@ export function MeetingListItem({ meeting }: { meeting: MeetingCard }) {
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-medium text-ink">{meeting.title}</h3>
+            <h3 className="text-[15px] font-semibold text-ink">{meeting.title}</h3>
             <Badge tone={meeting.meeting_type === 'External' ? 'accent' : 'neutral'}>
               {meeting.meeting_type}
             </Badge>
           </div>
 
-          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-ink-soft">
+          {/* Capped so a summary does not run the full width of a wide screen. */}
+          <p className="mt-1.5 line-clamp-2 max-w-[78ch] text-[13.5px] leading-[1.6] text-ink-soft">
             {meeting.overview ?? meeting.description}
           </p>
 
@@ -68,16 +69,16 @@ export function MeetingTile({ meeting }: { meeting: MeetingCard }) {
     <li>
       <Link
         to={`/meetings/${meeting.id}`}
-        className="flex h-full flex-col rounded-xl border border-line bg-surface p-4 transition hover:border-line-strong hover:bg-raised/40"
+        className="flex h-full flex-col rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] transition-colors hover:border-line-strong hover:bg-raised/50"
       >
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-medium text-ink">{meeting.title}</h3>
+          <h3 className="text-[15px] font-semibold text-ink">{meeting.title}</h3>
           <Badge tone={meeting.meeting_type === 'External' ? 'accent' : 'neutral'}>
             {meeting.meeting_type}
           </Badge>
         </div>
 
-        <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-ink-soft">
+        <p className="mt-2 line-clamp-3 flex-1 text-[13.5px] leading-[1.6] text-ink-soft">
           {meeting.overview ?? meeting.description}
         </p>
 
@@ -92,19 +93,23 @@ export function MeetingTile({ meeting }: { meeting: MeetingCard }) {
 
 export function UpcomingRow({ meeting }: { meeting: MeetingCard }) {
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3.5">
-      <div className="w-20 shrink-0 text-center">
-        <p className="text-xs font-medium text-ink-soft">{relativeDay(meeting.date)}</p>
-        <p className="font-mono text-sm whitespace-nowrap text-ink">{meetingTime(meeting.date)}</p>
+    <li className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 shadow-[var(--shadow-card)]">
+      <div className="w-[68px] shrink-0">
+        <p className="truncate text-[11px] font-medium text-ink-faint">
+          {relativeDay(meeting.date)}
+        </p>
+        <p className="font-mono text-[13px] whitespace-nowrap text-ink">
+          {meetingTime(meeting.date)}
+        </p>
       </div>
       <div className="min-w-0 flex-1 border-l border-line pl-3">
-        <p className="truncate text-sm font-medium text-ink">{meeting.title}</p>
-        <p className="mt-0.5 text-xs text-ink-faint">
+        <p className="line-clamp-2 text-[13px] leading-snug font-medium text-ink">{meeting.title}</p>
+        <p className="mt-0.5 truncate text-[11px] text-ink-faint">
           {durationLabel(meeting.duration)}
           {meeting.platform && ` · ${meeting.platform}`}
         </p>
       </div>
-      <AvatarStack names={meeting.participants.map((person) => person.name)} max={3} size={22} />
+      <AvatarStack names={meeting.participants.map((person) => person.name)} max={3} size={20} />
     </li>
   )
 }
