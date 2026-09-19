@@ -38,10 +38,38 @@ def summarise(title: str, segments: list[dict]) -> dict:
     """segments: [{speaker, start_time, end_time, text}, ...]"""
     if os.getenv("OPENAI_API_KEY"):
         try:
-            return _llm_summary(title, segments)
+            return _validated(_llm_summary(title, segments), title, segments)
         except Exception:
-            pass  # a flaky API must never cost the user their summary
+            pass  # a flaky or malformed API response must never cost the user their summary
     return _local_summary(title, segments)
+
+
+def _validated(data: dict, title: str, segments: list[dict]) -> dict:
+    """Coerce a model response into the shape the database expects.
+
+    A model can return a string where a list belongs, or omit a key entirely.
+    Storing that unchecked is how a bad response becomes a broken meeting page.
+    """
+    if not isinstance(data, dict) or not str(data.get("overview", "")).strip():
+        raise ValueError("Summary response has no overview")
+
+    clean = {"overview": str(data["overview"]).strip(), "generated_by": "llm"}
+
+    for key in ("key_points", "decisions", "topics", "insights"):
+        value = data.get(key) or []
+        clean[key] = [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
+
+    items = data.get("action_items") or []
+    clean["action_items"] = [
+        {
+            "task": str(item["task"]).strip()[:300],
+            "assignee": (str(item.get("assignee")).strip() if item.get("assignee") else None),
+            "due_date": (str(item.get("due_date")).strip() if item.get("due_date") else None),
+        }
+        for item in items
+        if isinstance(item, dict) and str(item.get("task", "")).strip()
+    ]
+    return clean
 
 
 def _llm_summary(title: str, segments: list[dict]) -> dict:

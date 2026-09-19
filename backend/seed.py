@@ -16,7 +16,7 @@ from app.models import (
     TranscriptSegment,
     User,
 )
-from app.seed import MEETINGS, SAMPLE_VIDEO, UPCOMING, build_segments
+from app.seed import MEETINGS, UPCOMING, build_segments
 
 OWNER = {"name": "Muhammad Umar", "email": "muhammad@meetly.ai"}
 
@@ -61,8 +61,9 @@ def add_recorded_meeting(db, data: dict) -> Meeting:
         duration=duration,
         meeting_type=data["meeting_type"],
         platform=data["platform"],
-        recording_url=SAMPLE_VIDEO,
         status="recorded",
+        source="seed",
+        processing_status="ready",
     )
     db.add(meeting)
     db.flush()
@@ -107,6 +108,8 @@ def add_upcoming_meeting(db, data: dict) -> Meeting:
         meeting_type=data["meeting_type"],
         platform=data["platform"],
         status="upcoming",
+        source="seed",
+        processing_status="ready",
     )
     db.add(meeting)
     db.flush()

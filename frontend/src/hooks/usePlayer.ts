@@ -3,22 +3,27 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 const TICK_MS = 100
 
 /**
- * Playback transport for a recording.
+ * Playback transport for a meeting.
  *
- * Capture is simulated in this build, so there is no media file whose length
- * matches the meeting. The transport is a virtual clock instead: it runs for the
- * meeting's real duration, which is what transcript sync, highlight jumps and
- * clip ranges are all measured against.
+ * Two engines behind one interface. When the meeting has a real recording the
+ * hook drives an `<audio>` element; when it does not — every seeded demo
+ * meeting — it falls back to a virtual clock running for the meeting's stated
+ * duration. Callers cannot tell the difference, which is what lets transcript
+ * sync, highlights and clips work identically for both.
  */
-export function usePlayer(duration: number) {
+export function usePlayer(duration: number, mediaUrl?: string | null) {
+  const audio = useRef<HTMLAudioElement | null>(null)
   const [currentTime, setCurrentTime] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [rate, setRate] = useState(1)
   const [volume, setVolume] = useState(0.8)
   const last = useRef(0)
 
+  const hasMedia = Boolean(mediaUrl)
+
+  // Virtual clock. Only runs when there is no media to drive the time.
   useEffect(() => {
-    if (!playing) return
+    if (hasMedia || !playing) return
 
     last.current = performance.now()
     const timer = setInterval(() => {
@@ -37,25 +42,72 @@ export function usePlayer(duration: number) {
     }, TICK_MS)
 
     return () => clearInterval(timer)
-  }, [playing, rate, duration])
+  }, [hasMedia, playing, rate, duration])
+
+  useEffect(() => {
+    if (audio.current) audio.current.playbackRate = rate
+  }, [rate])
+
+  useEffect(() => {
+    if (audio.current) audio.current.volume = volume
+  }, [volume])
 
   const seek = useCallback(
-    (time: number) => setCurrentTime(Math.min(Math.max(time, 0), duration)),
+    (time: number) => {
+      const clamped = Math.min(Math.max(time, 0), duration || time)
+      if (audio.current) audio.current.currentTime = clamped
+      setCurrentTime(clamped)
+    },
     [duration],
   )
 
-  const play = useCallback(() => setPlaying(true), [])
-  const toggle = useCallback(() => setPlaying((value) => !value), [])
+  const play = useCallback(() => {
+    if (audio.current) void audio.current.play().catch(() => setPlaying(false))
+    setPlaying(true)
+  }, [])
+
+  const toggle = useCallback(() => {
+    if (!audio.current) {
+      setPlaying((value) => !value)
+      return
+    }
+    if (audio.current.paused) void audio.current.play().catch(() => setPlaying(false))
+    else audio.current.pause()
+  }, [])
 
   const playFrom = useCallback(
     (time: number) => {
       seek(time)
-      setPlaying(true)
+      play()
     },
-    [seek],
+    [seek, play],
   )
 
-  return { currentTime, playing, rate, volume, seek, play, toggle, playFrom, setRate, setVolume }
+  /** Spread onto the `<audio>` element when the meeting has a recording. */
+  const mediaProps = {
+    ref: audio,
+    src: mediaUrl ?? undefined,
+    preload: 'metadata' as const,
+    onTimeUpdate: () => setCurrentTime(audio.current?.currentTime ?? 0),
+    onPlay: () => setPlaying(true),
+    onPause: () => setPlaying(false),
+    onEnded: () => setPlaying(false),
+  }
+
+  return {
+    currentTime,
+    playing,
+    rate,
+    volume,
+    hasMedia,
+    seek,
+    play,
+    toggle,
+    playFrom,
+    setRate,
+    setVolume,
+    mediaProps,
+  }
 }
 
 export type Player = ReturnType<typeof usePlayer>

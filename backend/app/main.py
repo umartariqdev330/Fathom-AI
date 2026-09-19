@@ -4,10 +4,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import action_items, calendar, clips, highlights, meetings, recordings, search
-from app.database import Base, SessionLocal, engine
+from app.database import Base, SessionLocal, engine, ensure_columns
 from app.models import Meeting
 
 Base.metadata.create_all(bind=engine)
+ensure_columns()
 
 
 def seed_if_empty() -> None:

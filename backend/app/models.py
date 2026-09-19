@@ -30,6 +30,14 @@ class Meeting(Base):
     status = Column(String, default="recorded")  # recorded | upcoming
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Set when the meeting has a real uploaded recording behind it.
+    media_filename = Column(String)
+    media_mime = Column(String)
+
+    source = Column(String, default="seed")  # seed | recorded
+    processing_status = Column(String, default="ready")  # uploading | processing | ready | failed
+    processing_error = Column(Text)
+
     participants = relationship("Participant", back_populates="meeting", cascade="all, delete-orphan")
     segments = relationship(
         "TranscriptSegment",
@@ -130,5 +138,8 @@ class Clip(Base):
     share_token = Column(String, unique=True, nullable=False)
     views = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Set when the range was actually cut out of the parent recording.
+    media_filename = Column(String)
 
     meeting = relationship("Meeting", back_populates="clips")

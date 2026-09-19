@@ -9,6 +9,9 @@ export function timecode(seconds: number): string {
 }
 
 export function durationLabel(seconds: number): string {
+  // A short recording is measured in seconds; rounding it to "0 min" is useless.
+  if (seconds < 60) return `${Math.round(seconds)} sec`
+
   const minutes = Math.round(seconds / 60)
   if (minutes < 60) return `${minutes} min`
   const hours = Math.floor(minutes / 60)

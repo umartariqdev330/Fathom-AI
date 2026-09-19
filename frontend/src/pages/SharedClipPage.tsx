@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Pause, Play, Sparkles } from 'lucide-react'
-import { api } from '../lib/api'
+import { API_BASE, api } from '../lib/api'
 import { durationLabel, meetingDate, timecode } from '../lib/format'
 import { usePlayer } from '../hooks/usePlayer'
 import { Avatar, AvatarStack, Button, Card, ErrorState, Skeleton, cx } from '../components/ui'
@@ -21,7 +21,7 @@ export function SharedClipPage() {
   })
 
   const clipLength = data ? data.clip.end_time - data.clip.start_time : 0
-  const player = usePlayer(clipLength)
+  const player = usePlayer(clipLength, data?.media_url ? `${API_BASE}${data.media_url}` : null)
   const { currentTime, playing, toggle, seek } = player
 
   useEffect(() => {
@@ -78,6 +78,7 @@ export function SharedClipPage() {
             </div>
 
             <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]">
+              {player.hasMedia && <audio {...player.mediaProps} className="hidden" />}
               {/* Same stage language as the in-app player, without its transport. */}
               <div className="flex aspect-video flex-col bg-[#121216]">
                 <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5">

@@ -115,6 +115,8 @@ class MeetingCard(Base):
     meeting_type: str
     platform: str | None = None
     status: str
+    source: str = "seed"
+    processing_status: str = "ready"
     participants: list[Participant] = []
     action_item_count: int = 0
     highlight_count: int = 0
@@ -131,6 +133,10 @@ class Meeting(Base):
     platform: str | None = None
     recording_url: str | None = None
     status: str
+    source: str = "seed"
+    processing_status: str = "ready"
+    processing_error: str | None = None
+    has_media: bool = False
     participants: list[Participant] = []
     segments: list[TranscriptSegment] = []
     summary: Summary | None = None
@@ -170,6 +176,7 @@ class SharedClip(BaseModel):
     meeting_title: str
     meeting_date: datetime
     recording_url: str | None = None
+    media_url: str | None = None
     participants: list[Participant] = []
     segments: list[TranscriptSegment] = []
 

@@ -74,6 +74,9 @@ export type Highlight = {
   category: HighlightCategory
 }
 
+export type MeetingSource = 'seed' | 'recorded' | 'simulated'
+export type ProcessingStatus = 'uploading' | 'processing' | 'ready' | 'failed'
+
 export type MeetingCard = {
   id: number
   title: string
@@ -83,6 +86,8 @@ export type MeetingCard = {
   meeting_type: string
   platform: string | null
   status: 'recorded' | 'upcoming'
+  source: MeetingSource
+  processing_status: ProcessingStatus
   participants: Participant[]
   action_item_count: number
   highlight_count: number
@@ -99,6 +104,10 @@ export type Meeting = {
   platform: string | null
   recording_url: string | null
   status: 'recorded' | 'upcoming'
+  source: MeetingSource
+  processing_status: ProcessingStatus
+  processing_error: string | null
+  has_media: boolean
   participants: Participant[]
   segments: TranscriptSegment[]
   summary: Summary | null
@@ -121,6 +130,7 @@ export type SharedClip = {
   meeting_title: string
   meeting_date: string
   recording_url: string | null
+  media_url: string | null
   participants: Participant[]
   segments: TranscriptSegment[]
 }

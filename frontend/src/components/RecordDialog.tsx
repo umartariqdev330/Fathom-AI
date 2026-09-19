@@ -1,74 +1,66 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, Loader2, Square } from 'lucide-react'
+import { AlertCircle, Check, Loader2, Mic, Square } from 'lucide-react'
 import { api } from '../lib/api'
 import { timecode } from '../lib/format'
+import { useRecorder } from '../hooks/useRecorder'
 import { Button, cx } from './ui'
 import { Modal } from './Modal'
 import { useToast } from './Toast'
 
-const PLATFORMS = ['Google Meet', 'Zoom', 'Microsoft Teams']
+const STEPS = ['Uploading audio', 'Transcribing', 'Generating summary', 'Extracting action items']
 
-const STEPS = ['Transcribing audio', 'Generating summary', 'Extracting action items', 'Creating highlights']
-
-type Stage = 'choose' | 'recording' | 'processing'
+type Stage = 'setup' | 'recording' | 'processing'
 
 export function RecordDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [stage, setStage] = useState<Stage>('choose')
-  const [platform, setPlatform] = useState(PLATFORMS[0])
-  const [elapsed, setElapsed] = useState(0)
+  const [stage, setStage] = useState<Stage>('setup')
+  const [title, setTitle] = useState('')
   const [step, setStep] = useState(0)
-  const recordingId = useRef<string | null>(null)
+  const recorder = useRecorder()
 
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const toast = useToast()
 
   useEffect(() => {
-    if (stage !== 'recording') return
-    const timer = setInterval(() => setElapsed((seconds) => seconds + 1), 1000)
-    return () => clearInterval(timer)
-  }, [stage])
-
-  useEffect(() => {
     if (!open) {
-      setStage('choose')
-      setElapsed(0)
+      setStage('setup')
       setStep(0)
+      setTitle('')
+      recorder.reset()
     }
+    // recorder identity is stable; re-running on it would cancel live recordings
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   async function start() {
-    try {
-      const { recording_id } = await api.startRecording(platform)
-      recordingId.current = recording_id
-      setStage('recording')
-    } catch (error) {
-      toast((error as Error).message, 'error')
-    }
+    const started = await recorder.start()
+    if (started) setStage('recording')
   }
 
   async function stop() {
-    if (!recordingId.current) return
-    setStage('processing')
+    const blob = await recorder.stop()
+    if (!blob) {
+      toast('Nothing was recorded', 'error')
+      setStage('setup')
+      return
+    }
 
-    // The pipeline stages are real work on the server; the pacing here just
-    // makes the sequence legible instead of flashing past.
-    const ticker = setInterval(() => setStep((current) => Math.min(current + 1, STEPS.length - 1)), 700)
+    setStage('processing')
+    const ticker = setInterval(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), 900)
 
     try {
-      const meeting = await api.stopRecording(recordingId.current)
-      await new Promise((resolve) => setTimeout(resolve, 600))
+      const meeting = await api.uploadRecording(blob, title.trim() || defaultTitle())
       clearInterval(ticker)
       setStep(STEPS.length)
       await queryClient.invalidateQueries()
       onClose()
-      toast('Meeting processed')
+      toast('Recording uploaded')
       navigate(`/meetings/${meeting.meeting_id}`)
     } catch (error) {
       clearInterval(ticker)
-      setStage('choose')
+      setStage('setup')
       toast((error as Error).message, 'error')
     }
   }
@@ -77,60 +69,64 @@ export function RecordDialog({ open, onClose }: { open: boolean; onClose: () => 
     <Modal
       open={open}
       onClose={stage === 'processing' ? () => {} : onClose}
-      title={stage === 'processing' ? 'Processing meeting' : 'Record a meeting'}
+      title={stage === 'processing' ? 'Processing recording' : 'Record a meeting'}
       description={
-        stage === 'choose'
-          ? 'Capture is simulated in this build. Stopping produces a real meeting with a transcript, summary and action items.'
+        stage === 'setup'
+          ? 'Meetly records this device’s microphone. Everyone in the room is captured; remote participants are not.'
           : undefined
       }
       footer={
-        stage === 'choose' ? (
+        stage === 'setup' ? (
           <>
             <Button onClick={onClose}>Cancel</Button>
-            <Button variant="primary" onClick={start}>
-              Start simulated recording
+            <Button variant="primary" onClick={start} disabled={recorder.starting}>
+              <Mic size={14} />
+              {recorder.starting ? 'Requesting access' : 'Start recording'}
             </Button>
           </>
         ) : undefined
       }
     >
-      {stage === 'choose' && (
-        <fieldset className="space-y-2">
-          <legend className="mb-2 text-sm font-medium text-ink">Choose meeting platform</legend>
-          {PLATFORMS.map((name) => (
-            <label
-              key={name}
-              className={cx(
-                'flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition',
-                platform === name
-                  ? 'border-accent bg-accent-soft text-accent-ink'
-                  : 'border-line hover:bg-raised',
-              )}
-            >
-              <input
-                type="radio"
-                name="platform"
-                value={name}
-                checked={platform === name}
-                onChange={() => setPlatform(name)}
-                className="accent-[var(--color-accent)]"
-              />
-              {name}
-            </label>
-          ))}
-        </fieldset>
+      {stage === 'setup' && (
+        <div className="space-y-3">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-ink-soft">Meeting title</span>
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder={defaultTitle()}
+              className="h-9 w-full rounded-lg border border-line bg-canvas px-3 text-sm outline-none focus:border-accent"
+            />
+          </label>
+
+          {recorder.error && (
+            <p className="flex items-start gap-2 rounded-lg border border-critical/30 bg-critical/5 px-3 py-2.5 text-sm text-ink-soft">
+              <AlertCircle size={15} className="mt-0.5 shrink-0 text-critical" />
+              {recorder.error}
+            </p>
+          )}
+        </div>
       )}
 
       {stage === 'recording' && (
         <div className="flex flex-col items-center gap-4 py-6">
           <span className="flex items-center gap-2 text-sm text-ink-soft">
             <span className="size-2.5 animate-pulse rounded-full bg-critical" />
-            Recording in progress on {platform}
+            Recording from your microphone
           </span>
-          <p className="font-mono text-4xl tabular-nums text-ink">{timecode(elapsed)}</p>
+          <p className="font-mono text-4xl tabular-nums text-ink">{timecode(recorder.seconds)}</p>
+
+          {/* Live input level: proof that audio is genuinely arriving, not a timer. */}
+          <div className="h-1.5 w-40 overflow-hidden rounded-full bg-raised" aria-hidden>
+            <div
+              className="h-full rounded-full bg-accent transition-[width] duration-100"
+              style={{ width: `${Math.min(100, recorder.level * 140)}%` }}
+            />
+          </div>
+
           <Button variant="primary" onClick={stop}>
             <Square size={14} />
-            Stop recording
+            Stop and process
           </Button>
         </div>
       )}
@@ -146,11 +142,15 @@ export function RecordDialog({ open, onClose }: { open: boolean; onClose: () => 
               ) : (
                 <span className="size-4 rounded-full border border-line" />
               )}
-              <span className={index <= step ? 'text-ink' : 'text-ink-faint'}>{label}</span>
+              <span className={cx(index <= step ? 'text-ink' : 'text-ink-faint')}>{label}</span>
             </li>
           ))}
         </ol>
       )}
     </Modal>
   )
+}
+
+function defaultTitle() {
+  return `Recording ${new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
 }

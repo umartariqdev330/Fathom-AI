@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Share2, Trash2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Loader2, Share2, Trash2 } from 'lucide-react'
 import type { Highlight, TranscriptSegment } from '../types'
 import { api } from '../lib/api'
 import { durationLabel, meetingDate, meetingTime } from '../lib/format'
 import { usePlayer } from '../hooks/usePlayer'
-import { AvatarStack, Badge, Button, Dot, ErrorState, Skeleton, cx } from '../components/ui'
+import { AvatarStack, Badge, Button, Dot, ErrorState, Skeleton, SourceBadge, cx } from '../components/ui'
 import { useToast } from '../components/Toast'
 import { RecordingPlayer } from '../components/meeting/Player'
 import { Transcript } from '../components/meeting/Transcript'
@@ -35,9 +35,15 @@ export function MeetingDetail() {
     queryKey: ['meeting', meetingId],
     queryFn: () => api.meeting(meetingId),
     enabled: Number.isFinite(meetingId),
+    // A meeting being transcribed becomes readable in a few seconds; poll until it is.
+    refetchInterval: (query) =>
+      query.state.data?.processing_status === 'processing' ? 2000 : false,
   })
 
-  const player = usePlayer(meeting?.duration ?? 0)
+  const player = usePlayer(
+    meeting?.duration ?? 0,
+    meeting?.has_media ? api.mediaUrl(meetingId) : null,
+  )
   const { seek, playFrom, currentTime } = player
 
   // Search results and shared links can deep-link to a moment.
@@ -101,6 +107,7 @@ export function MeetingDetail() {
                 {meeting.meeting_type}
               </Badge>
               {meeting.platform && <Badge>{meeting.platform}</Badge>}
+              <SourceBadge source={meeting.source} />
             </div>
           </div>
 
@@ -132,6 +139,12 @@ export function MeetingDetail() {
           </div>
         </div>
       </header>
+
+      {meeting.processing_status !== 'ready' && (
+        <div className="mx-5 mt-4 lg:mx-8">
+          <ProcessingNotice meeting={meeting} />
+        </div>
+      )}
 
       <div className="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-8">
         <div className="min-w-0 space-y-4">
@@ -235,6 +248,36 @@ export function MeetingDetail() {
         range={clipRange}
         onClose={() => setClipRange(null)}
       />
+    </div>
+  )
+}
+
+function ProcessingNotice({ meeting }: { meeting: { processing_status: string; processing_error: string | null } }) {
+  const failed = meeting.processing_status === 'failed'
+
+  return (
+    <div
+      className={cx(
+        'flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm',
+        failed ? 'border-critical/30 bg-critical/5' : 'border-line bg-surface',
+      )}
+      role="status"
+    >
+      {failed ? (
+        <AlertCircle size={16} className="mt-0.5 shrink-0 text-critical" />
+      ) : (
+        <Loader2 size={16} className="mt-0.5 shrink-0 animate-spin text-accent" />
+      )}
+      <div>
+        <p className="font-medium text-ink">
+          {failed ? 'Processing failed' : 'Transcribing and summarising this recording'}
+        </p>
+        <p className="mt-0.5 text-ink-soft">
+          {failed
+            ? meeting.processing_error ?? 'Something went wrong while processing this recording.'
+            : 'This usually takes a few seconds. The page updates itself when it is done.'}
+        </p>
+      </div>
     </div>
   )
 }

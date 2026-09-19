@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.database import get_db
-from app.services import ai, templates
+from app.services import ai, storage, templates
 
 router = APIRouter(prefix="/api", tags=["meetings"])
 
@@ -36,7 +37,10 @@ def list_meetings(status: str = "recorded", db: Session = Depends(get_db)):
 
 @router.get("/meetings/{meeting_id}", response_model=schemas.Meeting)
 def get_meeting(meeting_id: int, db: Session = Depends(get_db)):
-    return get_meeting_or_404(meeting_id, db)
+    meeting = get_meeting_or_404(meeting_id, db)
+    payload = schemas.Meeting.model_validate(meeting)
+    payload.has_media = storage.path_for(meeting.media_filename) is not None
+    return payload
 
 
 @router.post("/meetings", response_model=schemas.Meeting, status_code=201)
@@ -57,6 +61,21 @@ def delete_meeting(meeting_id: int, db: Session = Depends(get_db)):
 @router.get("/meetings/{meeting_id}/transcript", response_model=list[schemas.TranscriptSegment])
 def get_transcript(meeting_id: int, db: Session = Depends(get_db)):
     return get_meeting_or_404(meeting_id, db).segments
+
+
+@router.get("/meetings/{meeting_id}/media")
+def get_media(meeting_id: int, db: Session = Depends(get_db)):
+    """Serve the stored recording.
+
+    FileResponse handles Range requests, which is what lets the player seek
+    instead of having to download the whole file first.
+    """
+    meeting = get_meeting_or_404(meeting_id, db)
+    path = storage.path_for(meeting.media_filename) if meeting.media_filename else None
+    if not path:
+        raise HTTPException(status_code=404, detail="This meeting has no recording")
+
+    return FileResponse(path, media_type=meeting.media_mime or "audio/webm")
 
 
 @router.get("/templates", response_model=list[schemas.TemplateOption])

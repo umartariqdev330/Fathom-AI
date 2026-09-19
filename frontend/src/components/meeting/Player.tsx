@@ -59,6 +59,8 @@ export function RecordingPlayer({
       ref={frame}
       className="overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]"
     >
+      {player.hasMedia && <audio {...player.mediaProps} className="hidden" />}
+
       {/* Flex column, so the caption can never overlap the speaker on a short stage. */}
       <div className="flex aspect-video flex-col bg-[#121216]">
         <div className="flex items-start justify-between p-3">

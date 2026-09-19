@@ -7,8 +7,10 @@ use afterwards: a synced transcript, an AI summary, action items, highlights, se
 across every meeting you have ever recorded, and a public clip link you can send to
 someone who was not on the call.
 
-**The capture layer is simulated.** The brief allows it, and the interesting product
-is on the other side of the recording. See [What is simulated](#what-is-simulated).
+**The pipeline is real.** Meetly records your microphone in the browser, stores the
+audio, transcribes it, summarises it, and lets you cut a real clip out of it and share
+that clip publicly. The eight seeded demo meetings are authored content and are labelled
+as such everywhere they appear. See [What is real and what is not](#what-is-real-and-what-is-not).
 
 ---
 
@@ -63,8 +65,11 @@ account, and carries the clip's own transcript.
 
 **Calendar** — upcoming and past meetings, with a simulated Google/Outlook connection flow.
 
-**Simulated recording** — choose a platform, record, stop, watch the pipeline run, land on
-a finished meeting. The summary on that meeting is genuinely generated at that moment.
+**Recording** — click Record, grant microphone access, and Meetly captures real audio with
+a live input meter. Stopping uploads it; the server transcribes and summarises in the
+background while the page shows progress, then lands you on the finished meeting. If
+permission is denied or the browser cannot record, it says so rather than producing a
+recording that contains nothing.
 
 Plus: light and dark themes, keyboard focus states throughout, `Cmd/Ctrl+K` to search,
 loading skeletons, empty states, toast feedback, and a layout that works from 375px up.
@@ -126,32 +131,54 @@ If the API call fails for any reason, the fallback runs instead. The product nev
 because an external service is unreachable, and it never requires a key to be useful. The
 summary panel states which path produced what you are reading.
 
-The eight seeded meetings ship with hand-written summaries, so the demo shows the quality
-a good model produces rather than the quality of the fallback. The fallback is what you
-see on a meeting you record yourself through the simulated flow.
+The eight seeded meetings ship with hand-written summaries, so the demo reads well before
+you record anything. They are badged "Demo data" so they cannot be mistaken for live output.
+A meeting you record yourself is summarised for real, by whichever path is configured.
 
 ---
 
-## What is simulated
+## What is real and what is not
 
-| Simulated | What is real |
+Every meeting carries a badge saying which it is, so authored demo content is never
+mistaken for live output.
+
+| | Status |
 |---|---|
-| The recording bot joining a call | The meeting record it produces: transcript, summary, action items, participants |
-| Audio and video capture | The playback transport, at the meeting's real duration, driving transcript sync |
-| Google/Outlook OAuth | The connection flow, endpoint, and connection state |
-| Accounts and auth | Nothing is gated, and the public share route is genuinely public |
+| **Browser recording** | Real. `MediaRecorder` captures your microphone, with a live input meter. |
+| **Media storage** | Real. Uploaded audio is written to disk under a generated filename and served with HTTP Range support, which is what makes seeking work. |
+| **Playback** | Real for recordings: a genuine `<audio>` element. Seeded meetings have no audio, so they run on a virtual transport instead. |
+| **Transcription** | Real with an `OPENAI_API_KEY` (Whisper, real per-segment timestamps). Without a key, nothing is transcribed and the transcript says so. |
+| **AI summary** | Real. LLM with a key, local extraction without. Both paths validate the response before storing it. |
+| **Template switching** | Real. Each template re-reads the transcript. |
+| **Clips** | Real. `ffmpeg` cuts the selected range out of the stored audio into its own file. Seeded meetings have no audio, so their clips stay a time range. |
+| **Public sharing** | Real, and genuinely public: no account needed. |
+| **Seeded demo meetings** | **Authored.** Written by hand so the product demonstrates well before you record anything. Badged "Demo data". |
+| **The recording bot** | **Not built.** Meetly records the device, not a remote Zoom/Meet/Teams call. |
+| **Calendar OAuth** | **Simulated**, clearly labelled, structured so a real provider drops in. |
+| **Accounts** | **None.** Deliberate — see below. |
 
-**Why capture is stubbed.** A bot that reliably joins Zoom, Meet and Teams is days of work
-and an infrastructure problem, not a product one. The brief says it can be stubbed. Every
-hour spent on it is an hour not spent on the part of Fathom people actually live in, which
-is everything that happens after the call ends.
+**Why there is no recording bot.** A bot that reliably joins Zoom, Meet and Teams is days
+of work and an infrastructure problem, not a product one. The brief says it can be stubbed.
+Recording the device captures everyone in the room and exercises the entire pipeline
+honestly, which is what actually matters.
 
-**On playback.** Because there is no recording, the player is a virtual transport rather
-than a `<video>` element. That was a deliberate choice over dropping in a stock clip: a
-15-second sample against a 58-minute transcript makes every timestamp a lie, and transcript
-sync — the thing worth demonstrating — stops working. Instead the stage shows who is
-speaking and what they are saying as the clock advances, which is honest and, for a
-notetaker, more useful than a video thumbnail.
+**Why there is no login.** The brief requires the live link to open for someone who is not
+signed in. A login wall works directly against that and earns nothing against the stated
+criteria. Ownership columns are not in the schema; adding auth later means adding a
+`user_id` and filtering queries by it.
+
+---
+
+## Recording
+
+Meetly records **this device's microphone** via `MediaRecorder`, so everyone in the room is
+captured and remote participants are not. The browser will ask for permission the first
+time. It needs a secure context: `localhost` works in development, and production must be
+served over HTTPS or the browser will refuse to hand over the microphone.
+
+Audio is uploaded to `POST /api/meetings/record`, stored under a generated filename, and
+processed in the background. Uploads are capped by `MAX_UPLOAD_MB` and restricted to audio
+mime types.
 
 ---
 

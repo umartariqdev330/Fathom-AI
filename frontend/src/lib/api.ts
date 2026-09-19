@@ -13,7 +13,8 @@ import type {
 } from '../types'
 
 // Empty in dev, where Vite proxies /api to the local backend.
-const BASE = import.meta.env.VITE_API_URL ?? ''
+export const API_BASE = import.meta.env.VITE_API_URL ?? ''
+const BASE = API_BASE
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE}${path}`, {
@@ -38,6 +39,20 @@ export const api = {
   meeting: (id: number) => request<Meeting>(`/api/meetings/${id}`),
 
   templates: () => request<TemplateOption[]>('/api/templates'),
+
+  mediaUrl: (meetingId: number) => `${BASE}/api/meetings/${meetingId}/media`,
+
+  uploadRecording: async (blob: Blob, title: string) => {
+    const form = new FormData()
+    form.append('audio', blob, 'recording.webm')
+    form.append('title', title)
+    const response = await fetch(`${BASE}/api/meetings/record`, { method: 'POST', body: form })
+    if (!response.ok) {
+      const detail = await response.json().catch(() => null)
+      throw new Error(detail?.detail ?? 'Upload failed')
+    }
+    return (await response.json()) as { meeting_id: number; title: string }
+  },
 
   summary: (meetingId: number, template: string) =>
     request<SummaryView>(`/api/meetings/${meetingId}/summary?template=${template}`),

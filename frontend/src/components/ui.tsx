@@ -141,6 +141,22 @@ export function AvatarStack({
   )
 }
 
+/**
+ * Where a meeting's content came from.
+ *
+ * Authored demo content must never be mistaken for live AI output, so every
+ * meeting says which it is.
+ */
+export function SourceBadge({ source }: { source: string }) {
+  if (source === 'recorded') {
+    return <Badge tone="positive">Real recording</Badge>
+  }
+  if (source === 'simulated') {
+    return <Badge tone="caution">Simulated capture</Badge>
+  }
+  return <Badge>Demo data</Badge>
+}
+
 /** Separator between inline metadata items. */
 export function Dot() {
   return <span className="size-0.5 rounded-full bg-ink-faint" aria-hidden />
