@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { AlertCircle, ArrowLeft, Loader2, Share2, Trash2 } from 'lucide-react'
 import type { Highlight, TranscriptSegment } from '../types'
 import { api } from '../lib/api'
 import { durationLabel, meetingDate, meetingTime } from '../lib/format'
 import { usePlayer } from '../hooks/usePlayer'
 import { AvatarStack, Badge, Button, Dot, ErrorState, Skeleton, SourceBadge, cx } from '../components/ui'
-import { useToast } from '../components/Toast'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+import { useDeleteMeeting } from '../hooks/useDeleteMeeting'
 import { RecordingPlayer } from '../components/meeting/Player'
 import { Transcript } from '../components/meeting/Transcript'
 import { SummaryPanel } from '../components/meeting/SummaryPanel'
@@ -23,13 +24,12 @@ export function MeetingDetail() {
   const meetingId = Number(id)
   const [params] = useSearchParams()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const toast = useToast()
 
   const [tab, setTab] = useState<Tab>('summary')
   const [template, setTemplate] = useState('general')
   const [highlightTarget, setHighlightTarget] = useState<TranscriptSegment | null>(null)
   const [clipRange, setClipRange] = useState<ClipRange | null>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const { data: meeting, isLoading, error, refetch } = useQuery({
     queryKey: ['meeting', meetingId],
@@ -58,15 +58,7 @@ export function MeetingDetail() {
     return found ?? meeting.segments[0] ?? null
   }, [meeting, currentTime])
 
-  const remove = useMutation({
-    mutationFn: () => api.deleteMeeting(meetingId),
-    onSuccess: () => {
-      queryClient.invalidateQueries()
-      toast('Meeting deleted')
-      navigate('/meetings')
-    },
-    onError: (err: Error) => toast(err.message, 'error'),
-  })
+  const remove = useDeleteMeeting(() => navigate('/meetings'))
 
   if (isLoading) return <DetailSkeleton />
   if (error || !meeting)
@@ -130,7 +122,7 @@ export function MeetingDetail() {
             <Button
               variant="danger"
               size="sm"
-              onClick={() => remove.mutate()}
+              onClick={() => setConfirmingDelete(true)}
               aria-label="Delete meeting"
               title="Delete meeting"
             >
@@ -236,6 +228,15 @@ export function MeetingDetail() {
           </div>
         </aside>
       </div>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete this meeting?"
+        description={`“${meeting.title}” and its transcript, summary, action items and highlights will be permanently deleted. This cannot be undone.`}
+        pending={remove.isPending}
+        onConfirm={() => remove.mutate(meeting.id)}
+        onClose={() => setConfirmingDelete(false)}
+      />
 
       <HighlightDialog
         meetingId={meeting.id}

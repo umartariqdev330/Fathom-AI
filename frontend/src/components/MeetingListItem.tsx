@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ListTodo, Star, Video } from 'lucide-react'
+import { ListTodo, Star, Trash2, Video } from 'lucide-react'
 import type { MeetingCard } from '../types'
 import { durationLabel, meetingTime, relativeDay } from '../lib/format'
+import { useDeleteMeeting } from '../hooks/useDeleteMeeting'
 import { AvatarStack, Badge } from './ui'
+import { ConfirmDialog } from './ConfirmDialog'
 
 function Meta({ meeting }: { meeting: MeetingCard }) {
   return (
@@ -27,9 +30,40 @@ function Meta({ meeting }: { meeting: MeetingCard }) {
   )
 }
 
+/**
+ * Sits outside the row's <Link> rather than inside it: a button nested in a
+ * link is invalid markup and breaks keyboard navigation.
+ */
+function DeleteButton({ meeting }: { meeting: MeetingCard }) {
+  const [confirming, setConfirming] = useState(false)
+  const remove = useDeleteMeeting()
+
+  return (
+    <>
+      <button
+        onClick={() => setConfirming(true)}
+        aria-label={`Delete ${meeting.title}`}
+        title="Delete meeting"
+        className="absolute top-3 right-3 rounded-lg bg-surface p-1.5 text-ink-faint opacity-0 transition hover:bg-critical/10 hover:text-critical focus-visible:opacity-100 group-hover:opacity-100"
+      >
+        <Trash2 size={15} />
+      </button>
+
+      <ConfirmDialog
+        open={confirming}
+        title="Delete this meeting?"
+        description={`“${meeting.title}” and its transcript, summary, action items and highlights will be permanently deleted. This cannot be undone.`}
+        pending={remove.isPending}
+        onConfirm={() => remove.mutate(meeting.id)}
+        onClose={() => setConfirming(false)}
+      />
+    </>
+  )
+}
+
 export function MeetingListItem({ meeting }: { meeting: MeetingCard }) {
   return (
-    <li>
+    <li className="group relative">
       <Link
         to={`/meetings/${meeting.id}`}
         className="flex items-start gap-3.5 rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] transition-colors hover:border-line-strong hover:bg-raised/50"
@@ -56,17 +90,19 @@ export function MeetingListItem({ meeting }: { meeting: MeetingCard }) {
           </div>
         </div>
 
-        <div className="hidden shrink-0 sm:block">
+        <div className="hidden shrink-0 pr-7 sm:block">
           <AvatarStack names={meeting.participants.map((person) => person.name)} />
         </div>
       </Link>
+
+      <DeleteButton meeting={meeting} />
     </li>
   )
 }
 
 export function MeetingTile({ meeting }: { meeting: MeetingCard }) {
   return (
-    <li>
+    <li className="group relative">
       <Link
         to={`/meetings/${meeting.id}`}
         className="flex h-full flex-col rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] transition-colors hover:border-line-strong hover:bg-raised/50"
@@ -87,6 +123,8 @@ export function MeetingTile({ meeting }: { meeting: MeetingCard }) {
           <AvatarStack names={meeting.participants.map((person) => person.name)} max={3} size={22} />
         </div>
       </Link>
+
+      <DeleteButton meeting={meeting} />
     </li>
   )
 }
