@@ -1,16 +1,18 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, CalendarDays, Clock, ListTodo, Star, Video } from 'lucide-react'
+import { ArrowRight, CalendarDays, Clock, KeyRound, ListTodo, Sparkles, Star, Video } from 'lucide-react'
 import { api } from '../lib/api'
 import { greeting } from '../lib/format'
 import { CURRENT_USER, PageHeader } from '../components/AppLayout'
 import { MeetingListItem, UpcomingRow } from '../components/MeetingListItem'
-import { Card, EmptyState, Skeleton } from '../components/ui'
+import { Badge, Card, EmptyState, Skeleton } from '../components/ui'
+import type { AiSettings } from '../types'
 
 export function Dashboard() {
   const meetings = useQuery({ queryKey: ['meetings', 'recorded'], queryFn: () => api.meetings() })
   const calendar = useQuery({ queryKey: ['calendar'], queryFn: api.calendar })
   const stats = useQuery({ queryKey: ['stats'], queryFn: api.stats })
+  const aiSettings = useQuery({ queryKey: ['ai-settings'], queryFn: api.aiSettings })
 
   const firstName = CURRENT_USER.name.split(' ')[0]
 
@@ -21,7 +23,9 @@ export function Dashboard() {
         subtitle="Everything from your recent calls, already written up."
       />
 
-      <div className="space-y-7 px-5 py-6 lg:px-8">
+      <div className="space-y-6 px-5 py-6 lg:px-8">
+        <AiKeyBanner settings={aiSettings.data} isLoading={aiSettings.isLoading} />
+
         <section aria-label="This week at a glance">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat
@@ -173,3 +177,69 @@ function Stat({
     body
   )
 }
+
+function AiKeyBanner({ settings, isLoading }: { settings?: AiSettings; isLoading: boolean }) {
+  if (isLoading) {
+    return <Skeleton className="h-14 w-full rounded-xl" />
+  }
+
+  if (!settings || !settings.configured || settings.key_source !== 'saved') {
+    return (
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-caution/30 bg-caution/5 px-4 py-3 text-sm">
+        <div className="flex items-center gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-caution/15 text-caution">
+            <KeyRound size={17} />
+          </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-ink">OpenAI API Key Not Set</span>
+              <Badge tone="caution">Setup Required</Badge>
+            </div>
+            <p className="mt-0.5 text-xs text-ink-soft">
+              Real Whisper transcription and AI meeting summaries require an OpenAI key. Configure it in Settings to enable live AI features.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/settings"
+          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-caution/15 px-3 py-1.5 text-xs font-semibold text-caution transition-colors hover:bg-caution/25"
+        >
+          <span>Go to Settings</span>
+          <ArrowRight size={13} />
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm shadow-[var(--shadow-card)]">
+      <div className="flex items-center gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-positive/10 text-positive">
+          <Sparkles size={17} />
+        </span>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-ink">OpenAI API Key Active</span>
+            <Badge tone="positive">Connected</Badge>
+            {settings.masked_key && (
+              <span className="font-mono text-xs text-ink-faint hidden sm:inline">
+                ({settings.masked_key})
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-ink-faint">
+            AI summaries enabled with <span className="font-medium text-ink-soft">{settings.summary_model}</span> · Whisper transcription ready
+          </p>
+        </div>
+      </div>
+      <Link
+        to="/settings"
+        className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-ink-soft hover:text-accent transition-colors"
+      >
+        <span>Manage in Settings</span>
+        <ArrowRight size={13} />
+      </Link>
+    </div>
+  )
+}
+

@@ -119,7 +119,7 @@ matching, seeding fails loudly instead of shipping a highlight that plays the wr
 meeting's own summary, and `apply_template(title, segments, template)` for reading it back
 under one of the templates in `services/templates.py`.
 
-- **With `OPENAI_API_KEY` set** — the transcript goes to the model and comes back as
+- **With an OpenAI API key configured (in Settings)** — the transcript goes to the model and comes back as
   structured JSON: overview, key points, decisions, topics, insights, action items. For a
   template, the model is asked for exactly that template's headings.
 - **Without a key** — the transcript is processed locally: longest contributions as key
@@ -147,7 +147,7 @@ mistaken for live output.
 | **Browser recording** | Real. `MediaRecorder` captures your microphone, with a live input meter. |
 | **Media storage** | Real. Uploaded audio is written to disk under a generated filename and served with HTTP Range support, which is what makes seeking work. |
 | **Playback** | Real for recordings: a genuine `<audio>` element. Seeded meetings have no audio, so they run on a virtual transport instead. |
-| **Transcription** | Real with an `OPENAI_API_KEY` (Whisper, real per-segment timestamps). Without a key, nothing is transcribed and the transcript says so. |
+| **Transcription** | Real with an OpenAI API key (Whisper, real per-segment timestamps). Without a key, nothing is transcribed and the transcript says so. |
 | **AI summary** | Real. LLM with a key, local extraction without. Both paths validate the response before storing it. |
 | **Template switching** | Real. Each template re-reads the transcript. |
 | **Clips** | Real. `ffmpeg` cuts the selected range out of the stored audio into its own file. Seeded meetings have no audio, so their clips stay a time range. |
@@ -217,7 +217,6 @@ Copy `.env.example` to `.env` in `backend/`, and to `.env.local` in `frontend/` 
 | Variable | Where | Required | Purpose |
 |---|---|---|---|
 | `DATABASE_URL` | backend | no | Defaults to SQLite. Accepts a Postgres URL. |
-| `OPENAI_API_KEY` | backend | no | Enables LLM summaries. Without it the fallback runs. |
 | `OPENAI_MODEL` | backend | no | Defaults to `gpt-4o-mini`. |
 | `CORS_ORIGINS` | backend | in production | Comma-separated list of allowed origins. |
 | `VITE_API_URL` | frontend | in production | The deployed API origin. Empty in development. |

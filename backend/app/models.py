@@ -16,6 +16,15 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class Setting(Base):
+    """Small key-value store for things configured from the UI."""
+
+    __tablename__ = "settings"
+
+    key = Column(String, primary_key=True)
+    value = Column(Text)
+
+
 class Meeting(Base):
     __tablename__ = "meetings"
 

@@ -5,6 +5,7 @@ import { useTheme, type Theme } from '../lib/theme'
 import { CURRENT_USER, PageHeader } from '../components/AppLayout'
 import { Avatar, Button, Card, cx } from '../components/ui'
 import { useToast } from '../components/Toast'
+import { AiSettingsCard } from '../components/AiSettingsCard'
 
 /** Preferences live in this browser. There is no account system in this build. */
 function useSetting(key: string, fallback: boolean) {
@@ -104,22 +105,15 @@ export function SettingsPage() {
             checked={autoRecordInternal}
             onChange={setAutoRecordInternal}
           />
-        </Section>
-
-        <Section title="AI">
           <Toggle
             label="Suggest highlights automatically"
             hint="Marks likely key moments when a meeting finishes processing."
             checked={autoHighlights}
             onChange={setAutoHighlights}
           />
-          <Row
-            label="Summarisation"
-            hint="With an OPENAI_API_KEY set, summaries come from the model. Without one, the server falls back to a deterministic summariser so the product still works."
-          >
-            <span className="text-xs text-ink-faint">Configured on the server</span>
-          </Row>
         </Section>
+
+        <AiSettingsCard />
 
         <Section title="Calendar">
           <Row label="Connection" hint="Pull in events so the notetaker knows which calls to join.">

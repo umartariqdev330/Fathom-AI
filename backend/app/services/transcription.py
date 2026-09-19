@@ -1,6 +1,6 @@
 """Speech to text.
 
-With an OPENAI_API_KEY the audio goes to Whisper and comes back with real
+With an OpenAI API key configured, the audio goes to Whisper and comes back with real
 per-segment timestamps. Without one there is nothing honest to return, so the
 fallback produces a single segment that says exactly that rather than inventing
 a conversation.
@@ -11,17 +11,17 @@ from pathlib import Path
 
 from openai import OpenAI
 
-MODEL = os.getenv("TRANSCRIBE_MODEL", "whisper-1")
+from app.services import config
 
 NO_KEY_NOTICE = (
-    "Transcription is unavailable: no OPENAI_API_KEY is configured on the server. "
+    "Transcription is unavailable: no OpenAI API key is configured. "
     "The audio was recorded and stored, but nothing has been transcribed. "
-    "Set a key and re-record to see a real transcript here."
+    "Set an API key in Settings and re-record to see a real transcript here."
 )
 
 
 def available() -> bool:
-    return bool(os.getenv("OPENAI_API_KEY"))
+    return bool(config.api_key())
 
 
 def transcribe(path: Path) -> list[dict]:
@@ -29,10 +29,10 @@ def transcribe(path: Path) -> list[dict]:
     if not available():
         return [_notice(path)]
 
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = OpenAI(api_key=config.api_key())
     with path.open("rb") as audio:
         result = client.audio.transcriptions.create(
-            model=MODEL,
+            model=config.transcribe_model(),
             file=audio,
             response_format="verbose_json",
             timestamp_granularities=["segment"],

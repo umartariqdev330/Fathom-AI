@@ -1,9 +1,21 @@
 import os
 
+# Ensure OpenAI API key is never read from environment variables
+os.environ.pop("OPENAI_API_KEY", None)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import action_items, calendar, clips, highlights, meetings, recordings, search
+from app.api import (
+    action_items,
+    calendar,
+    clips,
+    highlights,
+    meetings,
+    recordings,
+    search,
+    settings,
+)
 from app.database import Base, SessionLocal, engine, ensure_columns
 from app.models import Clip, Meeting
 from app.services import storage
@@ -58,7 +70,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for router in (meetings, action_items, highlights, search, clips, calendar, recordings):
+for router in (meetings, action_items, highlights, search, clips, calendar, recordings, settings):
     app.include_router(router.router)
 
 

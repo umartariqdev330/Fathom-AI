@@ -1,17 +1,17 @@
 """AI summarisation with a deterministic fallback.
 
-If OPENAI_API_KEY is set the transcript goes to the LLM. If it is not, which is
-the normal case for a reviewer cloning this repo, the summary is derived from the
+With an API key configured, in the environment or from the Settings page, the
+transcript goes to the LLM. Without one the summary is derived from the
 transcript locally. The product never depends on an external API being reachable.
 """
 
 import json
-import os
 from collections import Counter
 
 import httpx
 
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+from app.services import config
+
 API_URL = "https://api.openai.com/v1/chat/completions"
 
 PROMPT = """You are a meeting assistant. Summarise this transcript.
@@ -36,12 +36,17 @@ ACTION_PHRASES = ("can you ", "we need to ", "by friday", "next week", "follow u
 
 def summarise(title: str, segments: list[dict]) -> dict:
     """segments: [{speaker, start_time, end_time, text}, ...]"""
-    if os.getenv("OPENAI_API_KEY"):
-        try:
-            return _validated(_llm_summary(title, segments), title, segments)
-        except Exception:
-            pass  # a flaky or malformed API response must never cost the user their summary
-    return _local_summary(title, segments)
+    if not config.api_key():
+        return {
+            "overview": "No OpenAI API key configured. Configure an API key in Settings to generate AI summaries.",
+            "key_points": [],
+            "decisions": [],
+            "topics": [],
+            "insights": [],
+            "action_items": [],
+            "generated_by": "none",
+        }
+    return _validated(_llm_summary(title, segments), title, segments)
 
 
 def _validated(data: dict, title: str, segments: list[dict]) -> dict:
@@ -76,9 +81,9 @@ def _llm_summary(title: str, segments: list[dict]) -> dict:
     transcript = "\n".join(f"{s['speaker']}: {s['text']}" for s in segments)
     response = httpx.post(
         API_URL,
-        headers={"Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]},
+        headers={"Authorization": "Bearer " + (config.api_key() or "")},
         json={
-            "model": MODEL,
+            "model": config.summary_model(),
             "messages": [
                 {"role": "user", "content": PROMPT.format(title=title, transcript=transcript)}
             ],
@@ -134,12 +139,14 @@ Transcript:
 
 def apply_template(title: str, segments: list[dict], template) -> dict:
     """Re-read a meeting under one of the summary templates."""
-    if os.getenv("OPENAI_API_KEY"):
-        try:
-            return _llm_template(title, segments, template)
-        except Exception:
-            pass
-    return _local_template(title, segments, template)
+    if not config.api_key():
+        return {
+            "overview": "No OpenAI API key configured. Configure an API key in Settings to generate AI summaries.",
+            "sections": [],
+            "action_items": [],
+            "generated_by": "none",
+        }
+    return _llm_template(title, segments, template)
 
 
 def _llm_template(title: str, segments: list[dict], template) -> dict:
@@ -147,9 +154,9 @@ def _llm_template(title: str, segments: list[dict], template) -> dict:
     labels = ", ".join(section.label for section in template.sections)
     response = httpx.post(
         API_URL,
-        headers={"Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]},
+        headers={"Authorization": "Bearer " + (config.api_key() or "")},
         json={
-            "model": MODEL,
+            "model": config.summary_model(),
             "messages": [
                 {
                     "role": "user",

@@ -162,3 +162,18 @@ export type CalendarResponse = {
   upcoming: MeetingCard[]
   past: MeetingCard[]
 }
+
+export type AiSettings = {
+  configured: boolean
+  key_source: 'saved' | 'none'
+  masked_key: string | null
+  summary_model: string
+  transcribe_model: string
+  transcribe_models: string[]
+}
+
+export type AiSettingsUpdate = {
+  api_key?: string
+  summary_model?: string
+  transcribe_model?: string
+}

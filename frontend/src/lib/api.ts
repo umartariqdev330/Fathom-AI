@@ -10,6 +10,8 @@ import type {
   Stats,
   SummaryView,
   TemplateOption,
+  AiSettings,
+  AiSettingsUpdate,
 } from '../types'
 
 // Empty in dev, where Vite proxies /api to the local backend.
@@ -39,6 +41,15 @@ export const api = {
   meeting: (id: number) => request<Meeting>(`/api/meetings/${id}`),
 
   templates: () => request<TemplateOption[]>('/api/templates'),
+
+  aiSettings: () => request<AiSettings>('/api/settings/ai'),
+
+  saveAiSettings: (body: AiSettingsUpdate) =>
+    request<AiSettings>('/api/settings/ai', { method: 'PUT', body: JSON.stringify(body) }),
+
+  aiModels: () => request<string[]>('/api/settings/ai/models'),
+
+  testAiConnection: () => post<{ ok: boolean; detail: string }>('/api/settings/ai/test', {}),
 
   mediaUrl: (meetingId: number) => `${BASE}/api/meetings/${meetingId}/media`,
 
