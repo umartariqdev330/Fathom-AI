@@ -65,11 +65,13 @@ account, and carries the clip's own transcript.
 
 **Calendar** — upcoming and past meetings, with a simulated Google/Outlook connection flow.
 
-**Recording** — click Record, grant microphone access, and Meetly captures real audio with
-a live input meter. Stopping uploads it; the server transcribes and summarises in the
-background while the page shows progress, then lands you on the finished meeting. If
-permission is denied or the browser cannot record, it says so rather than producing a
-recording that contains nothing.
+**Recording the actual meeting** — click Record and choose what to capture. The default
+shares your Zoom, Meet or Teams tab and records **every participant's audio**, mixed with
+your microphone so your own voice is included. A microphone-only mode captures just the
+room. A live input meter shows audio genuinely arriving. Stopping uploads it; the server
+transcribes and summarises in the background while the page shows progress, then lands you
+on the finished meeting. If sharing is cancelled, the tab's audio was not shared, or the
+browser cannot capture, it says exactly that rather than producing a silent recording.
 
 Plus: light and dark themes, keyboard focus states throughout, `Cmd/Ctrl+K` to search,
 loading skeletons, empty states, toast feedback, and a layout that works from 375px up.
@@ -144,7 +146,7 @@ mistaken for live output.
 
 | | Status |
 |---|---|
-| **Browser recording** | Real. `MediaRecorder` captures your microphone, with a live input meter. |
+| **Browser recording** | Real. Captures the shared meeting tab — all participants — mixed with your microphone, with a live input meter. |
 | **Media storage** | Real. Uploaded audio is written to disk under a generated filename and served with HTTP Range support, which is what makes seeking work. |
 | **Playback** | Real for recordings: a genuine `<audio>` element. Seeded meetings have no audio, so they run on a virtual transport instead. |
 | **Transcription** | Real with an OpenAI API key (Whisper, real per-segment timestamps). Without a key, nothing is transcribed and the transcript says so. |
@@ -153,7 +155,7 @@ mistaken for live output.
 | **Clips** | Real. `ffmpeg` cuts the selected range out of the stored audio into its own file. Seeded meetings have no audio, so their clips stay a time range. |
 | **Public sharing** | Real, and genuinely public: no account needed. |
 | **Seeded demo meetings** | **Authored.** Written by hand so the product demonstrates well before you record anything. Badged "Demo data". |
-| **The recording bot** | **Not built.** Meetly records the device, not a remote Zoom/Meet/Teams call. |
+| **A bot that joins the call** | **Not built.** Meetly captures the meeting by sharing its tab, which records the same audio without a bot. |
 | **Calendar OAuth** | **Simulated**, clearly labelled, structured so a real provider drops in. |
 | **Accounts** | **None.** Deliberate — see below. |
 
@@ -171,10 +173,29 @@ criteria. Ownership columns are not in the schema; adding auth later means addin
 
 ## Recording
 
-Meetly records **this device's microphone** via `MediaRecorder`, so everyone in the room is
-captured and remote participants are not. The browser will ask for permission the first
-time. It needs a secure context: `localhost` works in development, and production must be
-served over HTTPS or the browser will refuse to hand over the microphone.
+Meetly captures meetings two ways, chosen in the Record dialog.
+
+**Meeting audio (default).** `getDisplayMedia` asks which tab or window to share. Pick the
+Zoom, Meet or Teams tab and tick **"Also share tab audio"**. Meetly records that tab's
+audio — every participant on the call — and mixes in your microphone through the Web Audio
+API so you are captured too. Chrome's own "Stop sharing" button ends the recording cleanly.
+
+**Microphone only.** Captures the room you are sitting in. Remote participants are not
+recorded.
+
+If you share a tab without ticking the audio box, Meetly detects that no audio track
+arrived and tells you to share again rather than recording silence. If the microphone is
+unavailable in meeting mode, the call is still recorded and the interface says your own
+voice will be missing.
+
+Requires Chrome or Edge — Firefox and Safari have limited or no support for capturing tab
+audio. It also needs a secure context: `localhost` works in development, and production
+must be served over HTTPS.
+
+**This is not a bot that joins the call.** A bot that dials into Zoom, Meet and Teams by
+itself needs either a commercial service such as Recall.ai or a headless browser with a
+virtual audio device on a server. Sharing the meeting tab captures the same audio without
+either.
 
 Audio is uploaded to `POST /api/meetings/record`, stored under a generated filename, and
 processed in the background. Uploads are capped by `MAX_UPLOAD_MB` and restricted to audio
