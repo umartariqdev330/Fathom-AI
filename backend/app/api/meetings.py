@@ -54,8 +54,20 @@ def create_meeting(payload: schemas.MeetingCreate, db: Session = Depends(get_db)
 
 @router.delete("/meetings/{meeting_id}", status_code=204)
 def delete_meeting(meeting_id: int, db: Session = Depends(get_db)):
-    db.delete(get_meeting_or_404(meeting_id, db))
+    meeting = get_meeting_or_404(meeting_id, db)
+
+    # Rows cascade, files do not, so collect the names before the rows go.
+    files = [clip.media_filename for clip in meeting.clips if clip.media_filename]
+    if meeting.media_filename:
+        files.append(meeting.media_filename)
+
+    db.delete(meeting)
     db.commit()
+
+    # After the commit, and best effort: the user asked for the meeting to be
+    # gone, and that should not fail because a player still holds the audio.
+    for filename in files:
+        storage.delete(filename)
 
 
 @router.get("/meetings/{meeting_id}/transcript", response_model=list[schemas.TranscriptSegment])

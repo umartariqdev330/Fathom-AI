@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import action_items, calendar, clips, highlights, meetings, recordings, search
 from app.database import Base, SessionLocal, engine, ensure_columns
-from app.models import Meeting
+from app.models import Clip, Meeting
+from app.services import storage
 
 Base.metadata.create_all(bind=engine)
 ensure_columns()
@@ -27,7 +28,22 @@ def seed_if_empty() -> None:
         db.close()
 
 
+def sweep_orphaned_media() -> None:
+    """Drop media files no meeting or clip references any more."""
+    db = SessionLocal()
+    try:
+        referenced = {
+            name
+            for (name,) in db.query(Meeting.media_filename).union(db.query(Clip.media_filename))
+            if name
+        }
+        storage.remove_unreferenced(referenced)
+    finally:
+        db.close()
+
+
 seed_if_empty()
+sweep_orphaned_media()
 
 app = FastAPI(title="Meetly AI", version="1.0.0")
 

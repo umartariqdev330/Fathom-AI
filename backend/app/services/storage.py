@@ -56,7 +56,34 @@ def path_for(filename: str) -> Path | None:
     return path if path.is_file() else None
 
 
-def delete(filename: str) -> None:
+def remove_unreferenced(keep: set[str]) -> int:
+    """Delete stored files nothing points at any more.
+
+    A file that was locked when its meeting was deleted stays behind, so
+    without this the media directory only ever grows.
+    """
+    if not MEDIA_ROOT.is_dir():
+        return 0
+
+    removed = 0
+    for path in MEDIA_ROOT.iterdir():
+        if path.is_file() and path.name not in keep and delete(path.name):
+            removed += 1
+    return removed
+
+
+def delete(filename: str) -> bool:
+    """Best effort. Returns False if the file is still there.
+
+    Windows refuses to unlink a file another process still has open, so a file
+    being streamed to a player cannot be removed right then. Losing a few bytes
+    to a later cleanup is better than failing the delete the user asked for.
+    """
     path = path_for(filename)
-    if path:
-        path.unlink(missing_ok=True)
+    if not path:
+        return True
+    try:
+        path.unlink()
+        return True
+    except OSError:
+        return False
