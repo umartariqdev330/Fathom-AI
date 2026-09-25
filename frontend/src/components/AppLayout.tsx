@@ -1,17 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import {
-  Bell,
-  CalendarDays,
-  Home,
-  Menu,
-  Search,
-  Settings,
-  Sparkles,
-  Star,
-  Video,
-  X,
-} from 'lucide-react'
+import { Activity, CalendarDays, Circle, Home, Menu, Search, Settings, Star, Video, X } from 'lucide-react'
 import { Avatar, Button, cx } from './ui'
 import { RecordDialog } from './RecordDialog'
 
@@ -19,7 +8,6 @@ const NAV = [
   { to: '/', label: 'Home', icon: Home, end: true },
   { to: '/meetings', label: 'Meetings', icon: Video },
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { to: '/search', label: 'Search', icon: Search },
   { to: '/highlights', label: 'Highlights', icon: Star },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
@@ -34,7 +22,6 @@ export function AppLayout() {
 
   useEffect(() => setNavOpen(false), [location.pathname])
 
-  // Cmd/Ctrl+K is the fastest path to the thing this product is actually for.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
@@ -47,108 +34,95 @@ export function AppLayout() {
   }, [navigate])
 
   return (
-    <div className="min-h-screen lg:flex">
-      <MobileBar onOpen={() => setNavOpen(true)} />
-
-      {navOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          onClick={() => setNavOpen(false)}
-          aria-hidden
-        />
-      )}
-
-      <aside
-        className={cx(
-          'fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-line bg-surface transition-transform lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0',
-          navOpen ? 'translate-x-0' : '-translate-x-full',
-        )}
-      >
-        <div className="flex items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
-            <span className="grid size-7 place-items-center rounded-lg bg-accent text-white">
-              <Sparkles size={15} />
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-40 border-b border-line bg-canvas/90 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-2 px-4 lg:px-7">
+          <Link to="/" className="flex shrink-0 items-center gap-2">
+            <span className="grid size-7 place-items-center bg-ink text-canvas">
+              <Activity size={15} strokeWidth={2.5} />
             </span>
-            Meetly
+            <span className="text-[15px] font-semibold tracking-tight">Meetly</span>
           </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => setNavOpen(false)}
-            aria-label="Close navigation"
-          >
-            <X size={16} />
-          </Button>
-        </div>
 
-        <div className="px-3 pb-3">
-          <Button variant="primary" className="w-full" onClick={() => setRecording(true)}>
-            <Video size={15} />
-            Record meeting
-          </Button>
-        </div>
+          <nav className="ml-4 hidden items-center gap-0.5 md:flex" aria-label="Main">
+            {NAV.map(({ to, label, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  cx(
+                    'px-2.5 py-1.5 text-[13px] font-medium transition-colors',
+                    isActive
+                      ? 'text-ink underline decoration-accent decoration-2 underline-offset-[10px]'
+                      : 'text-ink-soft hover:text-ink',
+                  )
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+          </nav>
 
-        <nav className="flex-1 space-y-0.5 px-2" aria-label="Main">
-          {NAV.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                cx(
-                  'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition',
-                  isActive ? 'bg-raised text-ink' : 'text-ink-soft hover:bg-raised hover:text-ink',
-                )
-              }
+          <div className="ml-auto flex items-center gap-2">
+            <Link
+              to="/search"
+              className="hidden items-center gap-2 border border-line bg-surface px-2.5 py-1.5 text-xs text-ink-faint transition hover:border-line-strong sm:flex"
             >
-              <Icon size={16} />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
+              <Search size={13} />
+              Search
+              <kbd className="border border-line px-1 font-mono text-[10px]">Ctrl K</kbd>
+            </Link>
 
-        <div className="border-t border-line p-3">
-          <Link
-            to="/settings"
-            className="flex items-center gap-2.5 rounded-lg p-1.5 transition hover:bg-raised"
-          >
-            <Avatar name={CURRENT_USER.name} size={30} />
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-ink">
-                {CURRENT_USER.name}
-              </span>
-              <span className="block truncate text-xs text-ink-faint">Free plan</span>
-            </span>
-          </Link>
+            <Button variant="primary" size="sm" onClick={() => setRecording(true)}>
+              <Circle size={9} className="fill-current" />
+              Record
+            </Button>
+
+            <Link to="/settings" className="hidden shrink-0 sm:block" aria-label="Account">
+              <Avatar name={CURRENT_USER.name} size={28} />
+            </Link>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+              onClick={() => setNavOpen((value) => !value)}
+              aria-label={navOpen ? 'Close navigation' : 'Open navigation'}
+            >
+              {navOpen ? <X size={17} /> : <Menu size={17} />}
+            </Button>
+          </div>
         </div>
-      </aside>
 
-      <main className="min-w-0 flex-1 pt-14 lg:pt-0">
+        {navOpen && (
+          <nav className="border-t border-line bg-surface px-4 py-2 md:hidden" aria-label="Main">
+            {NAV.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  cx(
+                    'flex items-center gap-2.5 px-1 py-2.5 text-sm font-medium',
+                    isActive ? 'text-accent' : 'text-ink-soft',
+                  )
+                }
+              >
+                <Icon size={16} />
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+        )}
+      </header>
+
+      <main className="mx-auto max-w-[1400px] px-4 lg:px-7">
         <Outlet />
       </main>
 
       <RecordDialog open={recording} onClose={() => setRecording(false)} />
     </div>
-  )
-}
-
-function MobileBar({ onOpen }: { onOpen: () => void }) {
-  return (
-    <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-surface px-3 lg:hidden">
-      <Button variant="ghost" size="sm" onClick={onOpen} aria-label="Open navigation">
-        <Menu size={18} />
-      </Button>
-      <Link to="/" className="flex items-center gap-2 font-semibold">
-        <span className="grid size-6 place-items-center rounded-md bg-accent text-white">
-          <Sparkles size={13} />
-        </span>
-        Meetly
-      </Link>
-      <Link to="/search" aria-label="Search" className="p-2 text-ink-soft">
-        <Search size={18} />
-      </Link>
-    </header>
   )
 }
 
@@ -162,20 +136,14 @@ export function PageHeader({
   actions?: React.ReactNode
 }) {
   return (
-    <div className="sticky top-14 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-canvas/85 px-5 py-4 backdrop-blur-md lg:top-0 lg:px-8">
+    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line py-6">
       <div className="min-w-0">
-        <h1 className="text-[22px] font-semibold text-ink">{title}</h1>
-        {subtitle && <p className="mt-0.5 truncate text-[13px] text-ink-soft">{subtitle}</p>}
+        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink">
+          {title}
+        </h1>
+        {subtitle && <p className="mt-1 text-[13px] text-ink-soft">{subtitle}</p>}
       </div>
-      <div className="flex items-center gap-2">
-        {actions}
-        <button
-          className="hidden size-9 items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-raised hover:text-ink sm:inline-flex"
-          aria-label="Notifications"
-        >
-          <Bell size={17} />
-        </button>
-      </div>
+      {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>
   )
 }

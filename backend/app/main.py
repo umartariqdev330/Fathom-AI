@@ -24,22 +24,6 @@ Base.metadata.create_all(bind=engine)
 ensure_columns()
 
 
-def seed_if_empty() -> None:
-    """Seed on first boot.
-
-    Deployment targets that give the app a fresh disk would otherwise serve an
-    empty workspace, and an empty meetings list shows nothing about the product.
-    """
-    db = SessionLocal()
-    try:
-        if db.query(Meeting).count() == 0:
-            from seed import main as run_seed
-
-            run_seed()
-    finally:
-        db.close()
-
-
 def sweep_orphaned_media() -> None:
     """Drop media files no meeting or clip references any more."""
     db = SessionLocal()
@@ -54,7 +38,8 @@ def sweep_orphaned_media() -> None:
         db.close()
 
 
-seed_if_empty()
+# The workspace starts empty and fills up from real recordings. Tables are
+# created above; nothing is inserted on boot.
 sweep_orphaned_media()
 
 app = FastAPI(title="Meetly AI", version="1.0.0")

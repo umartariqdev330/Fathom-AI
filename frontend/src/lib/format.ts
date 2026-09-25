@@ -76,3 +76,13 @@ export function greeting(): string {
   if (hour < 18) return 'Good afternoon'
   return 'Good evening'
 }
+
+/** Buckets anything dated under its day label, keeping the order it came in. */
+export function byDay<T extends { date: string }>(items: T[]): [string, T[]][] {
+  const days = new Map<string, T[]>()
+  items.forEach((item) => {
+    const label = relativeDay(item.date)
+    days.set(label, [...(days.get(label) ?? []), item])
+  })
+  return [...days]
+}

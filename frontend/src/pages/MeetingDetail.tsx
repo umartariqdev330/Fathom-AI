@@ -58,6 +58,13 @@ export function MeetingDetail() {
     return found ?? meeting.segments[0] ?? null
   }, [meeting, currentTime])
 
+  // Counting jumps lets the transcript know a move was deliberate.
+  const [jumps, setJumps] = useState(0)
+  const jumpTo = (time: number) => {
+    setJumps((count) => count + 1)
+    playFrom(time)
+  }
+
   const remove = useDeleteMeeting(() => navigate('/meetings'))
 
   if (isLoading) return <DetailSkeleton />
@@ -77,7 +84,7 @@ export function MeetingDetail() {
 
   return (
     <div className="pb-10">
-      <header className="border-b border-line px-5 py-4 lg:px-8">
+      <header className="border-b border-line py-4">
         <Link
           to="/meetings"
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-ink-soft transition hover:text-ink"
@@ -133,12 +140,12 @@ export function MeetingDetail() {
       </header>
 
       {meeting.processing_status !== 'ready' && (
-        <div className="mx-5 mt-4 lg:mx-8">
+        <div className="mt-4">
           <ProcessingNotice meeting={meeting} />
         </div>
       )}
 
-      <div className="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-8">
+      <div className="grid gap-5 py-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-4">
           <RecordingPlayer
             player={player}
@@ -195,12 +202,12 @@ export function MeetingDetail() {
                 meetingId={meeting.id}
                 template={template}
                 onTemplateChange={setTemplate}
-                onPlay={playFrom}
+                onPlay={jumpTo}
               />
             )}
             {tab === 'actions' && <ActionItems meeting={meeting} />}
             {tab === 'highlights' && (
-              <HighlightList meeting={meeting} onPlay={playFrom} onShareClip={shareHighlight} />
+              <HighlightList meeting={meeting} onPlay={jumpTo} onShareClip={shareHighlight} />
             )}
             {tab === 'transcript' && (
               <div className="h-[520px] lg:hidden">
@@ -208,7 +215,8 @@ export function MeetingDetail() {
                   segments={meeting.segments}
                   meetingTitle={meeting.title}
                   activeId={activeSegment?.id ?? null}
-                  onSeek={playFrom}
+                  followKey={jumps}
+                  onSeek={jumpTo}
                   onHighlight={setHighlightTarget}
                 />
               </div>
@@ -217,12 +225,13 @@ export function MeetingDetail() {
         </div>
 
         <aside className="hidden lg:block">
-          <div className="sticky top-5 h-[calc(100vh-3rem)] overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="sticky top-[4.5rem] h-[calc(100vh-5.5rem)] overflow-hidden rounded-xl border border-line bg-surface">
             <Transcript
               segments={meeting.segments}
               meetingTitle={meeting.title}
               activeId={activeSegment?.id ?? null}
-              onSeek={playFrom}
+              followKey={jumps}
+              onSeek={jumpTo}
               onHighlight={setHighlightTarget}
             />
           </div>
@@ -285,7 +294,7 @@ function ProcessingNotice({ meeting }: { meeting: { processing_status: string; p
 
 function DetailSkeleton() {
   return (
-    <div className="space-y-5 p-5 lg:p-8">
+    <div className="space-y-5 py-5">
       <Skeleton className="h-7 w-72" />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-4">

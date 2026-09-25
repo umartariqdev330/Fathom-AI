@@ -38,7 +38,7 @@ export function SharedClipPage() {
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-3.5">
           <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
-            <span className="grid size-7 place-items-center rounded-lg bg-accent text-white">
+            <span className="grid size-7 place-items-center rounded-sm bg-accent text-white">
               <Sparkles size={15} />
             </span>
             Meetly
@@ -77,7 +77,7 @@ export function SharedClipPage() {
               </span>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]">
+            <div className="overflow-hidden rounded-sm border border-line bg-surface shadow-[var(--shadow-card)]">
               {player.hasMedia && <audio {...player.mediaProps} className="hidden" />}
               {/* Same stage language as the in-app player, without its transport. */}
               <div className="flex aspect-video flex-col bg-[#121216]">

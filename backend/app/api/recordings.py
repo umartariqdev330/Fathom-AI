@@ -1,15 +1,11 @@
 """Recording capture.
 
-Two ways in:
-
-- `POST /api/meetings/record` takes a real audio file recorded in the browser,
-  stores it, and processes it in the background: transcribe, then summarise.
-- `POST /api/recordings/start` + `/stop` keep the simulated path alive for
-  demos on a machine with no microphone, and for reviewers who would rather not
-  grant permission. It is labelled as simulated everywhere it surfaces.
+`POST /api/meetings/record` takes a real audio file recorded in the browser,
+stores it on disk, and processes it in the background: transcribe with Whisper,
+then summarise. There is no canned alternative — a meeting only exists here
+because audio was actually captured and transcribed.
 """
 
-import secrets
 from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
@@ -18,24 +14,9 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.database import SessionLocal, get_db
-from app.seed import SIMULATED_RECORDING
 from app.services import ai, clipper, storage, transcription
 
 router = APIRouter(prefix="/api", tags=["recordings"])
-
-active: dict[str, dict] = {}
-
-
-class StartRequest(BaseModel):
-    platform: str
-    title: str | None = None
-
-
-class StartResponse(BaseModel):
-    recording_id: str
-    platform: str
-    started_at: datetime
-
 
 class RecordedResponse(BaseModel):
     meeting_id: int
@@ -98,7 +79,7 @@ def _summarise(db: Session, meeting: models.Meeting, segments: list[dict]) -> No
             decisions=generated.get("decisions", []),
             topics=generated.get("topics", []),
             insights=generated.get("insights", []),
-            generated_by=generated.get("generated_by", "mock"),
+            generated_by=generated.get("generated_by", "local"),
         )
     )
     for item in generated.get("action_items", []):
@@ -144,44 +125,4 @@ async def upload_recording(
     db.refresh(meeting)
 
     background.add_task(process_recording, meeting.id)
-    return RecordedResponse(meeting_id=meeting.id, title=meeting.title)
-
-
-@router.post("/recordings/start", response_model=StartResponse)
-def start_recording(payload: StartRequest):
-    recording_id = secrets.token_urlsafe(6)
-    started_at = datetime.utcnow()
-    active[recording_id] = {"platform": payload.platform, "title": payload.title, "started_at": started_at}
-    return StartResponse(recording_id=recording_id, platform=payload.platform, started_at=started_at)
-
-
-@router.post("/recordings/{recording_id}/stop", response_model=RecordedResponse)
-def stop_recording(recording_id: str, db: Session = Depends(get_db)):
-    """Finish a simulated recording, producing a meeting from a canned transcript."""
-    session = active.pop(recording_id, None)
-    if not session:
-        raise HTTPException(status_code=404, detail="No active recording with that id")
-
-    template = SIMULATED_RECORDING
-    meeting = models.Meeting(
-        title=session["title"] or template["title"],
-        description=template["description"],
-        date=session["started_at"],
-        duration=int(template["segments"][-1]["end_time"]),
-        meeting_type=template["meeting_type"],
-        platform=session["platform"],
-        status="recorded",
-        source="simulated",
-        processing_status="ready",
-    )
-    db.add(meeting)
-    db.flush()
-
-    for person in template["participants"]:
-        db.add(models.Participant(meeting_id=meeting.id, **person))
-    for segment in template["segments"]:
-        db.add(models.TranscriptSegment(meeting_id=meeting.id, **segment))
-
-    _summarise(db, meeting, template["segments"])
-    db.commit()
     return RecordedResponse(meeting_id=meeting.id, title=meeting.title)

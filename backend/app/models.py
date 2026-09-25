@@ -101,7 +101,7 @@ class Summary(Base):
     decisions = Column(JSON, default=list)
     topics = Column(JSON, default=list)
     insights = Column(JSON, default=list)
-    generated_by = Column(String, default="mock")  # mock | llm
+    generated_by = Column(String, default="local")  # authored | local | llm
 
     meeting = relationship("Meeting", back_populates="summary")
 

@@ -9,14 +9,24 @@ type Props = {
   segments: TranscriptSegment[]
   meetingTitle: string
   activeId: number | null
+  /** Changes on every deliberate jump, which re-arms following. */
+  followKey?: number
   onSeek: (time: number) => void
   onHighlight: (segment: TranscriptSegment) => void
 }
 
-export function Transcript({ segments, meetingTitle, activeId, onSeek, onHighlight }: Props) {
+export function Transcript({
+  segments,
+  meetingTitle,
+  activeId,
+  followKey,
+  onSeek,
+  onHighlight,
+}: Props) {
   const [query, setQuery] = useState('')
   const [autoScroll, setAutoScroll] = useState(true)
   const activeRef = useRef<HTMLLIElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
   const toast = useToast()
 
   const visible = useMemo(() => {
@@ -31,8 +41,22 @@ export function Transcript({ segments, meetingTitle, activeId, onSeek, onHighlig
 
   useEffect(() => {
     if (!autoScroll || query) return
-    activeRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    const line = activeRef.current
+    const list = listRef.current
+    if (!line || !list) return
+
+    // Scrolling the list itself rather than scrollIntoView, which drags every
+    // scrollable ancestor along and would jerk the whole page on each line.
+    const offset =
+      line.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop
+    list.scrollTop = offset - list.clientHeight / 3
   }, [activeId, autoScroll, query])
+
+  // Jumping to a moment from the timeline, a highlight or the summary is an
+  // explicit request to go there, so it overrides having scrolled away earlier.
+  useEffect(() => {
+    if (followKey !== undefined) setAutoScroll(true)
+  }, [followKey])
 
   async function copyAll() {
     await navigator.clipboard.writeText(asText(segments))
@@ -63,7 +87,7 @@ export function Transcript({ segments, meetingTitle, activeId, onSeek, onHighlig
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search this transcript"
             aria-label="Search transcript"
-            className="h-8 w-full rounded-lg border border-line bg-canvas pr-7 pl-7.5 text-sm outline-none placeholder:text-ink-faint focus:border-accent"
+            className="h-8 w-full rounded-sm border border-line bg-canvas pr-7 pl-7.5 text-sm outline-none placeholder:text-ink-faint focus:border-accent"
           />
           {query && (
             <button
@@ -90,6 +114,7 @@ export function Transcript({ segments, meetingTitle, activeId, onSeek, onHighlig
       )}
 
       <ul
+        ref={listRef}
         className="min-h-0 flex-1 overflow-y-auto px-2 py-2 scrollbar-slim"
         onWheel={() => setAutoScroll(false)}
       >
@@ -109,7 +134,7 @@ export function Transcript({ segments, meetingTitle, activeId, onSeek, onHighlig
                   onSeek(segment.start_time)
                 }}
                 className={cx(
-                  'group relative cursor-pointer rounded-lg border-l-2 py-1.5 pr-1.5 pl-2.5 transition-colors',
+                  'group relative cursor-pointer rounded-sm border-l-2 py-1.5 pr-1.5 pl-2.5 transition-colors',
                   continues ? 'mt-0' : 'mt-2 first:mt-0',
                   active
                     ? 'border-accent bg-accent-soft/70'
@@ -143,7 +168,7 @@ export function Transcript({ segments, meetingTitle, activeId, onSeek, onHighlig
                       event.stopPropagation()
                       onHighlight(segment)
                     }}
-                    className="shrink-0 rounded-md p-1 text-ink-faint opacity-0 transition hover:text-accent group-hover:opacity-100 focus-visible:opacity-100"
+                    className="shrink-0 rounded-md p-1 text-ink-faint transition hover:text-accent sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
                     aria-label={`Highlight this moment at ${timecode(segment.start_time)}`}
                     title="Add highlight"
                   >

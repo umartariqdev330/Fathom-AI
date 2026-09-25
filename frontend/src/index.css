@@ -9,18 +9,18 @@
   --shadow-card: 0 1px 2px rgb(18 18 23 / 0.04);
   --shadow-float: 0 8px 28px -8px rgb(18 18 23 / 0.16);
 
-  --color-canvas: #fafaf9;
-  --color-surface: #ffffff;
-  --color-raised: #f4f4f2;
-  --color-line: #e6e5e2;
-  --color-line-strong: #d2d1cd;
-  --color-ink: #17171a;
-  --color-ink-soft: #57565c;
-  --color-ink-faint: #8a8a88;
+  --color-canvas: #f6f4f0;
+  --color-surface: #fffefb;
+  --color-raised: #efece5;
+  --color-line: #e0dbd1;
+  --color-line-strong: #c9c2b4;
+  --color-ink: #1b1916;
+  --color-ink-soft: #5d574d;
+  --color-ink-faint: #8f887c;
 
-  --color-accent: #4f46e5;
-  --color-accent-soft: #eef2ff;
-  --color-accent-ink: #3730a3;
+  --color-accent: #c2410c;
+  --color-accent-soft: #fdece2;
+  --color-accent-ink: #9a3412;
 
   --color-positive: #15803d;
   --color-caution: #b45309;
@@ -32,22 +32,34 @@
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-float: 0 8px 28px -8px rgb(0 0 0 / 0.55);
 
-  --color-canvas: #101012;
-  --color-surface: #18181b;
-  --color-raised: #232327;
-  --color-line: #2c2c31;
-  --color-line-strong: #3d3d44;
-  --color-ink: #f2f2f0;
-  --color-ink-soft: #a6a5ad;
-  --color-ink-faint: #76757e;
+  --color-canvas: #14120f;
+  --color-surface: #1c1917;
+  --color-raised: #262220;
+  --color-line: #332e2a;
+  --color-line-strong: #46403a;
+  --color-ink: #f5f1ea;
+  --color-ink-soft: #a9a196;
+  --color-ink-faint: #7a7369;
 
-  --color-accent: #7c74f0;
-  --color-accent-soft: #23214a;
-  --color-accent-ink: #c7c3fb;
+  --color-accent: #fb923c;
+  --color-accent-soft: #3a2517;
+  --color-accent-ink: #fdba74;
 
   --color-positive: #4ade80;
   --color-caution: #fbbf24;
   --color-critical: #f87171;
+}
+
+/* Speaker identity on the timeline: one hue per lane, stable across a meeting. */
+@theme {
+  --color-lane-1: #c2410c;
+  --color-lane-2: #0f766e;
+  --color-lane-3: #4338ca;
+  --color-lane-4: #a16207;
+  --color-lane-5: #9d174d;
+  --color-lane-6: #15803d;
+  --color-lane-7: #1d4ed8;
+  --color-lane-8: #7c2d12;
 }
 
 @layer base {

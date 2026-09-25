@@ -56,7 +56,7 @@ export function HighlightList({
       {meeting.highlights.map((highlight) => (
         <li
           key={highlight.id}
-          className="group rounded-lg border border-line bg-canvas p-3 transition hover:border-line-strong"
+          className="group rounded-sm border border-line bg-canvas p-3 transition hover:border-line-strong"
         >
           <div className="flex items-start gap-2">
             <Badge tone={CATEGORY_TONE[highlight.category]}>
@@ -70,7 +70,7 @@ export function HighlightList({
               {timecode(highlight.start_time)}
             </button>
 
-            <div className="ml-auto flex gap-0.5 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+            <div className="ml-auto flex gap-0.5 transition sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
               <Button
                 variant="ghost"
                 size="sm"

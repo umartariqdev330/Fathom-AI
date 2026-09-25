@@ -1,8 +1,14 @@
-"""Rebuild the database with the demo workspace.
+"""Rebuild the database.
 
-Run from the backend directory:  python seed.py
+Run from the backend directory:
+
+    python seed.py            empty workspace, ready for your own recordings
+    python seed.py --demo     load the authored demo meetings instead
+
+Either way the tables are dropped and recreated, so both are a clean start.
 """
 
+import sys
 from datetime import datetime, timedelta
 
 from app.database import Base, SessionLocal, engine
@@ -17,6 +23,7 @@ from app.models import (
     User,
 )
 from app.seed import MEETINGS, UPCOMING, build_segments
+from app.services import storage
 
 OWNER = {"name": "Muhammad Umar", "email": "muhammad@meetly.ai"}
 
@@ -68,13 +75,20 @@ def add_recorded_meeting(db, data: dict) -> Meeting:
     db.add(meeting)
     db.flush()
 
+    # The timeline draws one lane per speaker, so a voice that belongs to nobody
+    # in the room shows up as an extra person. Catch it here instead.
+    people = {person["name"] for person in data["participants"]}
+    strangers = {s["speaker"] for s in segments} - people
+    if strangers:
+        raise ValueError(f"{data['title']}: {', '.join(sorted(strangers))} speak but are not participants")
+
     for person in data["participants"]:
         db.add(Participant(meeting_id=meeting.id, **person))
 
     for segment in segments:
         db.add(TranscriptSegment(meeting_id=meeting.id, **segment))
 
-    db.add(Summary(meeting_id=meeting.id, generated_by="mock", **data["summary"]))
+    db.add(Summary(meeting_id=meeting.id, generated_by="authored", **data["summary"]))
 
     for item in data["action_items"]:
         item = dict(item)
@@ -140,13 +154,22 @@ def add_demo_clip(db) -> None:
     )
 
 
-def main():
+def main(demo: bool = False):
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()
     try:
         db.add(User(**OWNER))
+
+        if not demo:
+            db.commit()
+            # No meetings means no rows referencing stored audio, so anything
+            # left in the media directory is now orphaned.
+            removed = storage.remove_unreferenced(set())
+            print(f"Empty workspace ready. Removed {removed} unreferenced media file(s).")
+            print("Add data by recording a meeting in the app: Record -> share the call tab.")
+            return
 
         for data in MEETINGS:
             add_recorded_meeting(db, data)
@@ -166,4 +189,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(demo="--demo" in sys.argv)

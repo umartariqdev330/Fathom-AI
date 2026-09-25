@@ -13,7 +13,7 @@ from app.seed.engineering_standup import ENGINEERING_STANDUP
 from app.seed.investor_update import INVESTOR_UPDATE
 from app.seed.product_strategy import PRODUCT_STRATEGY
 from app.seed.sprint_planning import SPRINT_PLANNING
-from app.seed.upcoming import SIMULATED_RECORDING, UPCOMING
+from app.seed.upcoming import UPCOMING
 
 MEETINGS = [
     PRODUCT_STRATEGY,
@@ -26,4 +26,4 @@ MEETINGS = [
     CUSTOMER_FEEDBACK,
 ]
 
-__all__ = ["MEETINGS", "UPCOMING", "SIMULATED_RECORDING", "SAMPLE_VIDEO", "build_segments"]
+__all__ = ["MEETINGS", "UPCOMING", "SAMPLE_VIDEO", "build_segments"]

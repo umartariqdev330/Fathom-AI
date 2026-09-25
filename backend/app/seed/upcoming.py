@@ -73,28 +73,3 @@ UPCOMING = [
 # Used by the simulated recording flow. Stopping a recording produces a real
 # meeting from this transcript, summarised through the same AI service that
 # every other summary goes through.
-SIMULATED_RECORDING = {
-    "title": "Pipeline Sync",
-    "description": "Recorded with Meetly. Capture is simulated for this build.",
-    "meeting_type": "Internal",
-    "recording_url": SAMPLE_VIDEO,
-    "participants": [MUHAMMAD, AYESHA, ALEX],
-    "blocks": [
-        {
-            "title": "Status",
-            "start": 0,
-            "lines": [
-                (MUHAMMAD["name"], "Short sync on the pipeline. Ayesha, where did the parallel fan-out land?"),
-                (AYESHA["name"], "Working. Nine chunks in parallel plus the merge finishes in about ninety seconds on the longest meeting we have."),
-                (ALEX["name"], "And when a chunk fails we need to merge what is there and mark the summary partial rather than failing the whole thing."),
-                (AYESHA["name"], "That is in. Two retries per chunk, then merge partial with the failed time range attached so the interface can name it."),
-                (MUHAMMAD["name"], "Good. Can you write up the retry policy so support knows what to tell people?"),
-                (AYESHA["name"], "I will do that today."),
-                (ALEX["name"], "One open question. Do we regenerate a partial summary automatically when the provider recovers, or leave it to the user?"),
-                (MUHAMMAD["name"], "Leave it to the user for now. Silent regeneration changes a document someone may have already read."),
-            ],
-        },
-    ],
-}
-
-SIMULATED_RECORDING["segments"] = build_segments(SIMULATED_RECORDING["blocks"])

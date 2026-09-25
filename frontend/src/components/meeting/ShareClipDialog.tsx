@@ -71,7 +71,7 @@ export function ShareClipDialog({
   }
 
   const field =
-    'h-9 w-full rounded-lg border border-line bg-canvas px-3 text-sm outline-none placeholder:text-ink-faint focus:border-accent'
+    'h-9 w-full rounded-sm border border-line bg-canvas px-3 text-sm outline-none placeholder:text-ink-faint focus:border-accent'
 
   return (
     <Modal

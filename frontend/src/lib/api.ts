@@ -113,9 +113,5 @@ export const api = {
 
   clip: (token: string) => request<SharedClip>(`/api/clips/${token}`),
 
-  startRecording: (platform: string) =>
-    post<{ recording_id: string; platform: string }>('/api/recordings/start', { platform }),
 
-  stopRecording: (id: string) =>
-    post<{ meeting_id: number; title: string }>(`/api/recordings/${id}/stop`, {}),
 }

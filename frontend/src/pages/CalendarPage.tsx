@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, Check, Link2 } from 'lucide-react'
 import { api } from '../lib/api'
+import { byDay } from '../lib/format'
 import { PageHeader } from '../components/AppLayout'
-import { MeetingListItem, UpcomingRow } from '../components/MeetingListItem'
-import { Button, Card, EmptyState, Skeleton } from '../components/ui'
+import { UpcomingRow } from '../components/MeetingListItem'
+import { DayHeading, MeetingRow } from '../components/MeetingRow'
+import { Badge, Button, EmptyState, Skeleton } from '../components/ui'
 import { Modal } from '../components/Modal'
 import { useToast } from '../components/Toast'
 
@@ -23,21 +25,24 @@ export function CalendarPage() {
         title="Calendar"
         subtitle="What is coming up, and what has already been recorded."
         actions={
-          connection ? (
-            <Button size="sm" onClick={() => setConnecting(true)}>
-              <Check size={14} className="text-positive" />
-              {connection.account}
-            </Button>
-          ) : (
-            <Button variant="primary" size="sm" onClick={() => setConnecting(true)}>
-              <Link2 size={14} />
-              Connect calendar
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            <Badge tone="caution">Demo</Badge>
+            {connection ? (
+              <Button size="sm" onClick={() => setConnecting(true)}>
+                <Check size={14} className="text-positive" />
+                {connection.account}
+              </Button>
+            ) : (
+              <Button variant="primary" size="sm" onClick={() => setConnecting(true)}>
+                <Link2 size={14} />
+                Connect calendar
+              </Button>
+            )}
+          </div>
         }
       />
 
-      <div className="grid gap-6 px-5 py-6 lg:grid-cols-2 lg:px-8">
+      <div className="mt-5 space-y-9">
         <section aria-labelledby="upcoming">
           <h2 id="upcoming" className="mb-3 text-sm font-semibold text-ink">
             Upcoming
@@ -60,13 +65,11 @@ export function CalendarPage() {
           )}
 
           {data?.upcoming.length === 0 && (
-            <Card>
-              <EmptyState
-                icon={<CalendarDays size={22} />}
-                title="Nothing scheduled"
-                description="Connect a calendar to pull in your meetings."
-              />
-            </Card>
+            <EmptyState
+              icon={<CalendarDays size={22} />}
+              title="Nothing scheduled"
+              description="Connect a calendar to pull in your meetings."
+            />
           )}
         </section>
 
@@ -75,13 +78,17 @@ export function CalendarPage() {
             Recorded
           </h2>
 
-          {data && (
-            <ul className="space-y-2.5">
-              {data.past.slice(0, 6).map((meeting) => (
-                <MeetingListItem key={meeting.id} meeting={meeting} />
-              ))}
-            </ul>
-          )}
+          {data &&
+            byDay(data.past.slice(0, 8)).map(([day, group]) => (
+              <div key={day}>
+                <DayHeading label={day} count={group.length} />
+                <ul>
+                  {group.map((meeting) => (
+                    <MeetingRow key={meeting.id} meeting={meeting} />
+                  ))}
+                </ul>
+              </div>
+            ))}
         </section>
       </div>
 
@@ -137,22 +144,19 @@ function ConnectDialog({
       open={open}
       onClose={onClose}
       title={connection ? 'Calendar connection' : 'Connect a calendar'}
-      description={
-        connection
-          ? undefined
-          : 'Meetly reads your events so the notetaker knows which calls to join.'
-      }
+      description="This handshake is a placeholder. No provider is contacted and no account is authorised."
     >
       {connection ? (
         <div className="space-y-3">
           <p className="flex items-center gap-2 text-sm text-ink">
             <Check size={16} className="text-positive" />
-            Connected as <span className="font-medium">{connection.account}</span>
+            Placeholder account <span className="font-medium">{connection.account}</span>
           </p>
-          <p className="text-xs text-ink-faint">
-            The OAuth handshake is simulated in this build. A real integration would exchange a code
-            for tokens and sync events on a schedule; the endpoint and the connection state are
-            already in place for it.
+          <p className="text-xs leading-relaxed text-ink-faint">
+            Nothing was authorised. A real integration would exchange a code for tokens and sync
+            events on a schedule; the endpoint and the connection state are in place for it. The
+            upcoming and recorded meetings on this page are read from the database for real — this
+            one handshake is the only stubbed call in the API.
           </p>
           <Button variant="danger" onClick={disconnect}>
             Disconnect
@@ -166,8 +170,10 @@ function ConnectDialog({
           <Button className="w-full justify-start" disabled={busy} onClick={() => connect('outlook')}>
             Continue with Outlook Calendar
           </Button>
-          <p className="pt-1 text-xs text-ink-faint">
-            Simulated for this build. No account is contacted and nothing is authorised.
+          <p className="pt-1 text-xs leading-relaxed text-ink-faint">
+            Neither button opens a provider. They record a placeholder connection locally so the
+            rest of the calendar can be demonstrated; every other call in this app reads and writes
+            the database.
           </p>
         </div>
       )}

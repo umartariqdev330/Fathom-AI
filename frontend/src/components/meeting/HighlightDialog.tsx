@@ -74,7 +74,7 @@ export function HighlightDialog({
     >
       {segment && (
         <div className="space-y-3">
-          <p className="rounded-lg border border-line bg-canvas px-3 py-2.5 text-sm leading-relaxed text-ink-soft">
+          <p className="rounded-sm border border-line bg-canvas px-3 py-2.5 text-sm leading-relaxed text-ink-soft">
             {segment.text}
           </p>
 
@@ -84,7 +84,7 @@ export function HighlightDialog({
               autoFocus
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="h-9 w-full rounded-lg border border-line bg-canvas px-3 text-sm outline-none focus:border-accent"
+              className="h-9 w-full rounded-sm border border-line bg-canvas px-3 text-sm outline-none focus:border-accent"
             />
           </label>
 
@@ -97,7 +97,7 @@ export function HighlightDialog({
                   onClick={() => setCategory(option.value)}
                   aria-pressed={category === option.value}
                   className={cx(
-                    'rounded-lg border px-2.5 py-1.5 text-xs font-medium transition',
+                    'rounded-sm border px-2.5 py-1.5 text-xs font-medium transition',
                     category === option.value
                       ? 'border-accent bg-accent-soft text-accent-ink'
                       : 'border-line text-ink-soft hover:bg-raised',

@@ -43,7 +43,7 @@ export function Modal({ open, onClose, title, description, children, footer }: M
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="animate-rise w-full max-w-lg rounded-t-2xl border border-line bg-surface shadow-xl outline-none sm:rounded-2xl"
+        className="animate-rise w-full max-w-lg rounded-t-lg border border-line bg-surface shadow-xl outline-none sm:rounded-sm"
       >
         <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
           <div>

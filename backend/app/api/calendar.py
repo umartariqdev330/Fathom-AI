@@ -25,6 +25,10 @@ class ConnectResponse(BaseModel):
     account: str
     connected: bool
     synced_events: int
+    # The response says so itself, so nothing downstream can present this as a
+    # real connection by accident.
+    simulated: bool = True
+    notice: str
 
 
 @router.get("/calendar", response_model=CalendarResponse)
@@ -40,14 +44,22 @@ def get_calendar(db: Session = Depends(get_db)):
 
 @router.post("/calendar/connect", response_model=ConnectResponse)
 def connect_calendar(payload: ConnectRequest, db: Session = Depends(get_db)):
-    """Simulated OAuth.
+    """Stands in for OAuth, and says so.
 
-    A real integration would redirect to the provider, exchange the code for
-    tokens, and sync events into the meetings table. The seeded upcoming meetings
-    stand in for that sync so the rest of the product is exercisable.
+    No provider is contacted and nothing is authorised. A real integration would
+    redirect to the provider, exchange the code for tokens and sync events into
+    the meetings table; the event count below is read from that table, so the
+    rest of the calendar is genuine even though this handshake is not.
+
+    Every other endpoint in this API reads and writes the database for real.
     """
     synced = db.query(models.Meeting).filter(models.Meeting.status == "upcoming").count()
-    account = "muhammad@meetly.ai" if payload.provider == "google" else "muhammad@outlook.com"
+    account = f"demo-account@{payload.provider}.example"
     return ConnectResponse(
-        provider=payload.provider, account=account, connected=True, synced_events=synced
+        provider=payload.provider,
+        account=account,
+        connected=True,
+        synced_events=synced,
+        simulated=True,
+        notice="Placeholder connection. No provider was contacted and no account was authorised.",
     )

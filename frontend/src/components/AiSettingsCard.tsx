@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Check, Eye, EyeOff, Plug } from 'lucide-react'
 import { api } from '../lib/api'
-import { Badge, Button, Card, Skeleton, cx } from './ui'
+import { Badge, Button, Skeleton, cx } from './ui'
 import { useToast } from './Toast'
 
 const FIELD =
-  'h-9 w-full rounded-lg border border-line bg-canvas px-3 text-sm text-ink outline-none focus:border-accent'
+  'h-9 w-full rounded-sm border border-line bg-canvas px-3 text-sm text-ink outline-none focus:border-accent'
 
 export function AiSettingsCard() {
   const queryClient = useQueryClient()
@@ -62,11 +62,11 @@ export function AiSettingsCard() {
 
   if (settings.isPending) {
     return (
-      <Card className="space-y-3 p-4">
+      <div className="space-y-3">
         <Skeleton className="h-5 w-24" />
         <Skeleton className="h-9 w-full" />
         <Skeleton className="h-9 w-full" />
-      </Card>
+      </div>
     )
   }
 
@@ -74,7 +74,7 @@ export function AiSettingsCard() {
   const chatModels = models.data ?? []
 
   return (
-    <Card className="p-4">
+    <div>
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-ink">AI</h2>
         {data && <KeyStatus source={data.key_source} masked={data.masked_key} />}
@@ -150,7 +150,7 @@ export function AiSettingsCard() {
           </label>
         </div>
 
-        <p className="flex items-start gap-2 rounded-lg border border-caution/30 bg-caution/5 px-3 py-2.5 text-xs leading-relaxed text-ink-soft">
+        <p className="flex items-start gap-2 rounded-sm border border-caution/30 bg-caution/5 px-3 py-2.5 text-xs leading-relaxed text-ink-soft">
           <AlertTriangle size={14} className="mt-0.5 shrink-0 text-caution" />
           This build has no sign-in, so anyone who can open the app can use a saved key and spend
           against it.
@@ -167,7 +167,7 @@ export function AiSettingsCard() {
           </Button>
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
 

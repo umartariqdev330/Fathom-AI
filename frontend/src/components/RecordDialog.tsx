@@ -74,7 +74,7 @@ export function RecordDialog({ open, onClose }: { open: boolean; onClose: () => 
   }
 
   const field =
-    'h-9 w-full rounded-lg border border-line bg-canvas px-3 text-sm text-ink outline-none focus:border-accent'
+    'h-9 w-full rounded-sm border border-line bg-canvas px-3 text-sm text-ink outline-none focus:border-accent'
 
   return (
     <Modal
@@ -142,7 +142,7 @@ export function RecordDialog({ open, onClose }: { open: boolean; onClose: () => 
           </div>
 
           {recorder.error && (
-            <p className="flex items-start gap-2 rounded-lg border border-critical/30 bg-critical/5 px-3 py-2.5 text-sm text-ink-soft">
+            <p className="flex items-start gap-2 rounded-sm border border-critical/30 bg-critical/5 px-3 py-2.5 text-sm text-ink-soft">
               <AlertCircle size={15} className="mt-0.5 shrink-0 text-critical" />
               {recorder.error}
             </p>
@@ -216,7 +216,7 @@ function ModeOption({
   return (
     <label
       className={cx(
-        'flex cursor-pointer gap-3 rounded-lg border p-3 transition',
+        'flex cursor-pointer gap-3 rounded-sm border p-3 transition',
         selected ? 'border-accent bg-accent-soft/50' : 'border-line hover:bg-raised',
       )}
     >

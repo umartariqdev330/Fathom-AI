@@ -1,4 +1,4 @@
-from app.seed.base import ALEX, AYESHA, DANIEL, EMMA, HANA, MUHAMMAD, RYAN, SARAH, VICTOR
+from app.seed.base import ALEX, AYESHA, DANIEL, HANA, MUHAMMAD, RYAN, SARAH, VICTOR
 
 
 ARCHITECTURE_REVIEW = {
@@ -70,7 +70,7 @@ ARCHITECTURE_REVIEW = {
                 (MUHAMMAD["name"], "Which takes us to what, thirty cents?"),
                 (AYESHA["name"], "About twenty-eight cents at current API pricing, if we use the small model for chunk summaries and the larger one only for the merge."),
                 (RYAN["name"], "And our lowest paid tier is nineteen dollars a month. What is the heaviest user doing?"),
-                (EMMA["name"], "Our heaviest individual user recorded ninety-one meetings last month. Mostly thirty-minute calls."),
+                (SARAH["name"], "Our heaviest individual user recorded ninety-one meetings last month. Mostly thirty-minute calls."),
                 (RYAN["name"], "Ninety-one times twenty-eight cents is about twenty-five dollars against a nineteen dollar plan. That is a negative margin user."),
                 (ALEX["name"], "Only if every meeting is sixty minutes. At thirty minutes it is four chunks, not nine, so the real number is closer to twelve dollars."),
                 (RYAN["name"], "Still thin. Ayesha, is the small model actually adequate for chunk summaries or is that wishful?"),

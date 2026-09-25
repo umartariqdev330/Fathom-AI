@@ -21,7 +21,7 @@ export function Button({ variant = 'secondary', size = 'md', className, ...props
   return (
     <button
       className={cx(
-        'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg font-medium transition-[background-color,border-color,color,filter,opacity] duration-150',
+        'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-sm font-medium transition-[background-color,border-color,color,filter,opacity] duration-150',
         'disabled:pointer-events-none disabled:opacity-45',
         size === 'sm' ? 'h-8 px-2.5 text-[13px]' : 'h-9 px-3.5 text-sm',
         BUTTON_VARIANTS[variant],
@@ -35,7 +35,7 @@ export function Button({ variant = 'secondary', size = 'md', className, ...props
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
     <div
-      className={cx('rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]', className)}
+      className={cx('rounded-sm border border-line bg-surface shadow-[var(--shadow-card)]', className)}
     >
       {children}
     </div>
@@ -150,9 +150,6 @@ export function AvatarStack({
 export function SourceBadge({ source }: { source: string }) {
   if (source === 'recorded') {
     return <Badge tone="positive">Real recording</Badge>
-  }
-  if (source === 'simulated') {
-    return <Badge tone="caution">Simulated capture</Badge>
   }
   return <Badge>Demo data</Badge>
 }

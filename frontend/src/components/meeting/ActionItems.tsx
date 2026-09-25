@@ -93,7 +93,7 @@ export function ActionItems({ meeting }: { meeting: Meeting }) {
           ) : (
             <li
               key={item.id}
-              className="group flex items-start gap-2.5 rounded-lg border border-line bg-canvas px-3 py-2.5"
+              className="group flex items-start gap-2.5 rounded-sm border border-line bg-canvas px-3 py-2.5"
             >
               <button
                 onClick={() => toggle.mutate(item)}
@@ -128,7 +128,7 @@ export function ActionItems({ meeting }: { meeting: Meeting }) {
                 </div>
               </div>
 
-              <div className="flex gap-0.5 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+              <div className="flex gap-0.5 transition sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -173,11 +173,11 @@ function ActionItemForm({
     due_date: item?.due_date ?? '',
   })
 
-  const field = 'h-8 w-full rounded-lg border border-line bg-surface px-2.5 text-sm outline-none placeholder:text-ink-faint focus:border-accent'
+  const field = 'h-8 w-full rounded-sm border border-line bg-surface px-2.5 text-sm outline-none placeholder:text-ink-faint focus:border-accent'
 
   return (
     <form
-      className="mb-2 space-y-2 rounded-lg border border-accent/40 bg-accent-soft/40 p-3"
+      className="mb-2 space-y-2 rounded-sm border border-accent/40 bg-accent-soft/40 p-3"
       onSubmit={(event) => {
         event.preventDefault()
         if (values.task.trim()) onSave(values)

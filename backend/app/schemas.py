@@ -30,7 +30,7 @@ class Summary(Base):
     decisions: list[str] = []
     topics: list[str] = []
     insights: list[str] = []
-    generated_by: str = "mock"
+    generated_by: str = "local"
 
 
 class SummaryItem(BaseModel):
@@ -51,7 +51,7 @@ class SummaryView(BaseModel):
     overview: str
     sections: list[SummarySection] = []
     topics: list[str] = []
-    generated_by: str = "mock"
+    generated_by: str = "local"
 
 
 class TemplateOption(BaseModel):

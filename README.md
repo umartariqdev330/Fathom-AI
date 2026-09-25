@@ -7,26 +7,33 @@ use afterwards: a synced transcript, an AI summary, action items, highlights, se
 across every meeting you have ever recorded, and a public clip link you can send to
 someone who was not on the call.
 
-**The pipeline is real.** Meetly records your microphone in the browser, stores the
-audio, transcribes it, summarises it, and lets you cut a real clip out of it and share
-that clip publicly. The eight seeded demo meetings are authored content and are labelled
-as such everywhere they appear. See [What is real and what is not](#what-is-real-and-what-is-not).
+**The pipeline is real, and the workspace starts empty.** Meetly records the meeting tab
+in the browser, stores the audio, transcribes it with Whisper, summarises it, and lets you
+cut a real clip out of it and share that clip publicly. Every meeting you see is one you
+recorded — nothing is shipped in the database. See
+[What is real and what is not](#what-is-real-and-what-is-not).
 
 ---
 
 ## Try it in 60 seconds
 
-1. Open the dashboard. Eight recorded meetings and five upcoming ones are already there.
-2. Open **AI Platform Architecture Review** — eight people, 58 minutes. This is the hard
-   case the brief asks about.
-3. Press play. The transcript follows along. Click any line and the recording jumps there.
-   Switch the summary template to **Sales call** or **Engineering review** and watch the
-   sections change.
-4. Click a coloured dot on the timeline — those are highlights.
-5. Hit **Share clip**, create it, open the link. It works signed out, in a private window.
-6. Search `pgvector`, or `redaction`, or `Priya`. Results land on the exact moment.
+The workspace opens empty. Fill it the way a user would:
 
-A permanent share link is seeded at **`/share/demo-clip`**.
+1. **Settings → AI**, paste an OpenAI key. Without one nothing can be transcribed, and the
+   app says so rather than inventing a transcript.
+2. Start a call in Zoom, Meet or Teams — or open any video.
+3. Press **Record**, choose the tab the call is in, and tick **Share tab audio**. That
+   captures everyone in the room, not just your microphone.
+4. Stop. The meeting appears as "Transcribing…" and fills itself in a few seconds.
+5. Press play. The transcript follows along; click any line and playback jumps there.
+   Switch the summary template and watch the sections re-derive from the transcript.
+6. Star a line to make a highlight. Hit **Share clip** and open the link — it works signed
+   out, in a private window.
+7. Search a phrase from the call. Results land on the exact moment.
+
+If you want a populated workspace to look around first, `python seed.py --demo` loads eight
+authored meetings, badged "Demo data" everywhere they appear. `python seed.py` empties it
+again.
 
 ---
 
@@ -133,9 +140,9 @@ If the API call fails for any reason, the fallback runs instead. The product nev
 because an external service is unreachable, and it never requires a key to be useful. The
 summary panel states which path produced what you are reading.
 
-The eight seeded meetings ship with hand-written summaries, so the demo reads well before
-you record anything. They are badged "Demo data" so they cannot be mistaken for live output.
-A meeting you record yourself is summarised for real, by whichever path is configured.
+A meeting you record is summarised for real, by whichever path is configured. The summary
+footer names the path it took: written by the language model, extracted locally from the
+transcript, or — only under `--demo` — authored by hand.
 
 ---
 
@@ -154,10 +161,38 @@ mistaken for live output.
 | **Template switching** | Real. Each template re-reads the transcript. |
 | **Clips** | Real. `ffmpeg` cuts the selected range out of the stored audio into its own file. Seeded meetings have no audio, so their clips stay a time range. |
 | **Public sharing** | Real, and genuinely public: no account needed. |
-| **Seeded demo meetings** | **Authored.** Written by hand so the product demonstrates well before you record anything. Badged "Demo data". |
+| **Shipped content** | **None.** The database starts empty; every meeting is one you recorded. `python seed.py --demo` can load authored demo meetings, badged "Demo data", but that is opt-in and off by default. |
 | **A bot that joins the call** | **Not built.** Meetly captures the meeting by sharing its tab, which records the same audio without a bot. |
-| **Calendar OAuth** | **Simulated**, clearly labelled, structured so a real provider drops in. |
+| **Database and API** | Real. SQLite through SQLAlchemy, FastAPI on top. Every endpoint reads and writes it — see below. |
+| **Calendar OAuth** | **Placeholder**, and the only one. Labelled in the UI and in the API response itself (`simulated: true`). The events it reports come from the database. |
 | **Accounts** | **None.** Deliberate — see below. |
+
+### The backend is not mock data
+
+Every endpoint queries the database. Nothing returns a canned payload. Two ways to check
+it yourself, with the server running:
+
+```bash
+curl -s localhost:8000/api/meetings/2 | python -c "import sys,json;print(json.load(sys.stdin)['title'])"
+sqlite3 backend/meetly.db "update meetings set title='CHANGED' where id=2"
+curl -s localhost:8000/api/meetings/2 | python -c "import sys,json;print(json.load(sys.stdin)['title'])"
+```
+
+The second read returns `CHANGED` without restarting anything, because the API is reading
+the row, not a fixture. The reverse direction works too — create a highlight over HTTP and
+it appears in the table:
+
+```bash
+curl -s -X POST localhost:8000/api/meetings/2/highlights -H "Content-Type: application/json"   -d '{"title":"probe","category":"insight","start_time":30,"end_time":45}'
+sqlite3 backend/meetly.db "select id,meeting_id,title from highlights order by id desc limit 1"
+```
+
+Search is a real `ILIKE` across transcript segments, titles, summaries, action items and
+highlights — not a filtered constant. The seeded meetings are rows inserted by `seed.py`,
+the same rows a recording creates; they are authored *content*, not a mocked *API*.
+
+The one exception is `POST /api/calendar/connect`, which stands in for an OAuth handshake.
+It contacts nobody, and its own response carries `simulated: true` and a notice saying so.
 
 **Why there is no recording bot.** A bot that reliably joins Zoom, Meet and Teams is days
 of work and an infrastructure problem, not a product one. The brief says it can be stubbed.
@@ -212,7 +247,7 @@ Two terminals. Python 3.11+ and Node 18+.
 ```bash
 cd backend
 pip install -r requirements.txt
-python seed.py
+python seed.py            # creates the tables; workspace starts empty
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -251,8 +286,8 @@ No secrets are committed.
 The two halves deploy independently.
 
 **Backend** — `render.yaml` is included. Point Render at the repo, and set `CORS_ORIGINS`
-to the deployed frontend origin. The API seeds itself on first boot if its database is
-empty, so a fresh deploy is never an empty workspace.
+to the deployed frontend origin. Tables are created on boot and nothing is inserted, so a
+fresh deploy starts empty and stays that way until someone records.
 
 **Frontend** — `frontend/vercel.json` is included, with the SPA rewrite that keeps
 `/share/:token` working on a hard refresh. Set `VITE_API_URL` to the deployed API origin

@@ -120,7 +120,7 @@ def _local_summary(title: str, segments: list[dict]) -> dict:
             for s in segments
             if _matches(s["text"], ACTION_PHRASES)
         ][:5],
-        "generated_by": "mock",
+        "generated_by": "local",
     }
 
 
@@ -214,7 +214,7 @@ def _local_template(title: str, segments: list[dict], template) -> dict:
         "overview": _local_summary(title, segments)["overview"],
         "sections": sections,
         "topics": _topics(segments),
-        "generated_by": "mock",
+        "generated_by": "local",
     }
 
 

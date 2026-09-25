@@ -74,7 +74,7 @@ export type Highlight = {
   category: HighlightCategory
 }
 
-export type MeetingSource = 'seed' | 'recorded' | 'simulated'
+export type MeetingSource = 'seed' | 'recorded'
 export type ProcessingStatus = 'uploading' | 'processing' | 'ready' | 'failed'
 
 export type MeetingCard = {
