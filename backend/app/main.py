@@ -17,7 +17,7 @@ from app.api import (
     settings,
 )
 from app.database import Base, SessionLocal, engine, ensure_columns
-from app.models import Clip, Meeting
+from app.models import Clip, Meeting, Setting
 from app.services import storage
 
 Base.metadata.create_all(bind=engine)
@@ -38,8 +38,27 @@ def sweep_orphaned_media() -> None:
         db.close()
 
 
-# The workspace starts empty and fills up from real recordings. Tables are
-# created above; nothing is inserted on boot.
+def seed_if_untouched() -> None:
+    """Give a brand-new deployment something to show.
+
+    Only fires on a database nobody has touched: no meetings and no saved
+    settings. Seeding drops and recreates the tables, so the settings check is
+    what stops a restart from wiping an API key after every meeting has been
+    deleted by hand.
+    """
+    db = SessionLocal()
+    try:
+        fresh = db.query(Meeting).count() == 0 and db.query(Setting).count() == 0
+    finally:
+        db.close()
+
+    if fresh:
+        from seed import main as run_seed
+
+        run_seed(demo=True)
+
+
+seed_if_untouched()
 sweep_orphaned_media()
 
 app = FastAPI(title="Meetly AI", version="1.0.0")
