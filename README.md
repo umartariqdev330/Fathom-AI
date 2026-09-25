@@ -302,6 +302,56 @@ signed out.
 
 ## Product decisions
 
+### What I changed from Fathom, and why
+
+Fathom was the reference, not the blueprint. Every difference below is a decision I can
+defend, not a limitation I ran into.
+
+**The transcript stopped being a tab.** In Fathom the transcript sits beside the summary as
+one of several tabs, so reading a summary point and checking what was actually said means
+leaving one for the other. Here the transcript is a permanent rail down the right of the
+meeting page. It is the source every other panel is derived from, so it should not be
+something you navigate away from. The summary, action items and highlights rotate beside it.
+
+**Navigation moved to the top.** A left sidebar spends 240px of every screen restating five
+destinations you already know. Moving it into a top bar gives that width back to the
+transcript, which is the only thing on the page that benefits from being wider.
+
+**Lists became ledgers, not card stacks.** Every meeting row starts with a fixed-width column
+holding the clock time, then the title and one line of summary, grouped under day headings
+that stick while you scroll. Because the column is fixed, a long list lines up on one axis and
+can be scanned without being read. Cards look more designed and scan worse.
+
+**Filters moved into a rail.** They are the state of the page, not an action you take once, so
+they stay visible while you scroll instead of collapsing into a toolbar. Each person carries a
+count taken from the unfiltered set, so a name never reads as zero because a different filter
+is hiding it.
+
+**Search answers a second question.** Which meetings a phrase turns up in is information in
+itself, so the result breakdown is a rail of meetings with hit counts that also filters the
+results, rather than a line of prose above a flat list.
+
+**The palette is paper, not dashboard.** Warm neutrals with a burnt-amber accent, square
+surfaces, hairline rules. A meeting archive is something you read, and reading surfaces should
+not glare. The accent is reserved for the playhead and the primary action, so it never becomes
+decoration.
+
+**Summaries say where they came from.** A one-line footer names the path that produced what
+you are reading: the language model, local extraction from the transcript, or hand-authored
+demo content. An AI notetaker that will not tell you which of its output is AI is asking for
+trust it has not earned.
+
+**A thing I built and then cut.** The meeting page was first built around a speaker-lane
+timeline — one horizontal lane per person, showing who dominated and where the room went
+quiet. It was the most interesting thing in the build. Shown the running product, it read as a
+data visualisation sitting where a player belonged: you could see the shape of the call but
+not watch it. I put the recognisable player back. The timeline is the better artefact; the
+player is the better product.
+
+**What I did not change.** Mid-call marking, template switching, quote-anchored highlights and
+public clip links are Fathom's ideas and they are correct. Changing them to look different
+would have been decoration, not judgement.
+
 **What I built first, and why.** Meeting detail, before anything else. It is where the
 product is used and where a rebuild either feels real or does not. The dashboard, calendar
 and settings pages came last, because they are navigation around the thing rather than the
