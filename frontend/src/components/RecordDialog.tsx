@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Check, Loader2, Mic, MonitorSpeaker, Square } from 'lucide-react'
+import { AlertCircle, Check, Loader2, Mic, MonitorSpeaker, Square, Star } from 'lucide-react'
 import { api } from '../lib/api'
 import { timecode } from '../lib/format'
 import { useRecorder, type CaptureMode } from '../hooks/useRecorder'
@@ -54,7 +54,12 @@ export function RecordDialog({ open, onClose }: { open: boolean; onClose: () => 
     const ticker = setInterval(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), 900)
 
     try {
-      const meeting = await api.uploadRecording(blob, title.trim() || defaultTitle(), platform)
+      const meeting = await api.uploadRecording(
+        blob,
+        title.trim() || defaultTitle(),
+        platform,
+        recorder.marks,
+      )
       clearInterval(ticker)
       setStep(STEPS.length)
       await queryClient.invalidateQueries()
@@ -172,6 +177,20 @@ export function RecordDialog({ open, onClose }: { open: boolean; onClose: () => 
               will not be captured.
             </p>
           )}
+
+          {/* Marking during the call is the point: you press it when something
+              matters, instead of hunting for the moment afterwards. */}
+          <div className="flex flex-col items-center gap-2">
+            <Button onClick={recorder.mark}>
+              <Star size={14} />
+              Mark this moment
+            </Button>
+            <p className="h-4 text-xs text-ink-faint">
+              {recorder.marks.length === 0
+                ? 'Marked moments become highlights once the transcript lands.'
+                : `${recorder.marks.length} marked · ${recorder.marks.map(timecode).join(', ')}`}
+            </p>
+          </div>
 
           <Button variant="primary" onClick={stop}>
             <Square size={14} />

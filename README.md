@@ -25,11 +25,13 @@ The workspace opens empty. Fill it the way a user would:
 3. Press **Record**, choose the tab the call is in, and tick **Share tab audio**. That
    captures everyone in the room, not just your microphone.
 4. Stop. The meeting appears as "Transcribing…" and fills itself in a few seconds.
-5. Press play. The transcript follows along; click any line and playback jumps there.
+5. While it is still recording, press **Mark this moment** whenever something matters.
+   Each press becomes a highlight on the line that was being spoken at that second.
+6. Press play. The transcript follows along; click any line and playback jumps there.
    Switch the summary template and watch the sections re-derive from the transcript.
-6. Star a line to make a highlight. Hit **Share clip** and open the link — it works signed
-   out, in a private window.
-7. Search a phrase from the call. Results land on the exact moment.
+7. Star any line to add more highlights. Hit **Share clip** and open the link — it works
+   signed out, in a private window.
+8. Search a phrase from the call. Results land on the exact moment.
 
 If you want a populated workspace to look around first, `python seed.py --demo` loads eight
 authored meetings, badged "Demo data" everywhere they appear. `python seed.py` empties it

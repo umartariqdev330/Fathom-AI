@@ -6,6 +6,7 @@ then summarise. There is no canned alternative — a meeting only exists here
 because audio was actually captured and transcribed.
 """
 
+import json
 from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
@@ -23,7 +24,7 @@ class RecordedResponse(BaseModel):
     title: str
 
 
-def process_recording(meeting_id: int) -> None:
+def process_recording(meeting_id: int, marks: list[float] | None = None) -> None:
     """Transcribe then summarise, in the background.
 
     Runs with its own session because the request that scheduled it is long
@@ -53,6 +54,7 @@ def process_recording(meeting_id: int) -> None:
             clipper.media_duration(path) or max(s["end_time"] for s in segments)
         )
         _summarise(db, meeting, segments)
+        _highlight_marks(db, meeting, segments, marks or [])
 
         meeting.processing_status = "ready"
         meeting.processing_error = None
@@ -66,6 +68,33 @@ def process_recording(meeting_id: int) -> None:
             db.commit()
     finally:
         db.close()
+
+
+def _highlight_marks(
+    db: Session, meeting: models.Meeting, segments: list[dict], marks: list[float]
+) -> None:
+    """Turn moments marked during the call into highlights.
+
+    A mark is pressed a beat after the thing worth keeping was said, so it
+    resolves to the line that was being spoken at that time rather than the
+    nearest line start. The line's own text becomes the excerpt, which is what
+    makes the highlight land on the right moment in playback.
+    """
+    for mark in sorted(set(marks)):
+        spoken = [s for s in segments if s["start_time"] <= mark]
+        line = spoken[-1] if spoken else segments[0]
+
+        db.add(
+            models.Highlight(
+                meeting_id=meeting.id,
+                title=line["text"].strip()[:90],
+                category="key-moment",
+                start_time=line["start_time"],
+                end_time=line["end_time"],
+                transcript_excerpt=line["text"].strip(),
+                speaker=line.get("speaker"),
+            )
+        )
 
 
 def _summarise(db: Session, meeting: models.Meeting, segments: list[dict]) -> None:
@@ -99,6 +128,7 @@ async def upload_recording(
     audio: UploadFile = File(...),
     title: str = Form("Untitled recording"),
     platform: str = Form("Meetly"),
+    marks: str = Form("[]"),
     db: Session = Depends(get_db),
 ):
     """Store a real browser recording and start processing it."""
@@ -124,5 +154,14 @@ async def upload_recording(
     db.commit()
     db.refresh(meeting)
 
-    background.add_task(process_recording, meeting.id)
+    background.add_task(process_recording, meeting.id, _parse_marks(marks))
     return RecordedResponse(meeting_id=meeting.id, title=meeting.title)
+
+
+def _parse_marks(raw: str) -> list[float]:
+    """Marks arrive as a JSON array of elapsed seconds. Bad input is not fatal."""
+    try:
+        values = json.loads(raw or "[]")
+    except json.JSONDecodeError:
+        return []
+    return [float(v) for v in values if isinstance(v, (int, float)) and v >= 0]

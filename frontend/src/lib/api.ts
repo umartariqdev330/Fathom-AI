@@ -53,11 +53,12 @@ export const api = {
 
   mediaUrl: (meetingId: number) => `${BASE}/api/meetings/${meetingId}/media`,
 
-  uploadRecording: async (blob: Blob, title: string, platform: string) => {
+  uploadRecording: async (blob: Blob, title: string, platform: string, marks: number[] = []) => {
     const form = new FormData()
     form.append('audio', blob, 'recording.webm')
     form.append('title', title)
     form.append('platform', platform)
+    form.append('marks', JSON.stringify(marks))
     const response = await fetch(`${BASE}/api/meetings/record`, { method: 'POST', body: form })
     if (!response.ok) {
       const detail = await response.json().catch(() => null)

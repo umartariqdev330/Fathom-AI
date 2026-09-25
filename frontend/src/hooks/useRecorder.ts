@@ -21,6 +21,9 @@ export function useRecorder() {
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sources, setSources] = useState<Sources>({ meeting: false, mic: false })
+  // Moments marked while the call is still running. Held as elapsed seconds,
+  // which is the only clock that exists before there is a transcript.
+  const [marks, setMarks] = useState<number[]>([])
 
   const recorder = useRef<MediaRecorder | null>(null)
   const chunks = useRef<Blob[]>([])
@@ -137,7 +140,12 @@ export function useRecorder() {
     setSeconds(0)
     setError(null)
     setSources({ meeting: false, mic: false })
+    setMarks([])
   }, [cleanup])
+
+  const mark = useCallback(() => {
+    setMarks((all) => [...all, seconds])
+  }, [seconds])
 
   return {
     start,
@@ -148,6 +156,8 @@ export function useRecorder() {
     starting,
     error,
     sources,
+    marks,
+    mark,
     onShareEnded,
   }
 }
